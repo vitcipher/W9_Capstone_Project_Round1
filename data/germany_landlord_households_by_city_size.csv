@@ -1,0 +1,7 @@
+city_size_category,definition,year,share_of_population_pct,households_count
+Kleinstadt,up to 20,000 inhabitants,2000,11,
+Kleinstadt,up to 20,000 inhabitants,2022,16,2500000
+Mittelstadt,"20,000-100,000 inhabitants",2000,10,
+Mittelstadt,"20,000-100,000 inhabitants",2022,13,1500000
+Grossstadt,"100,000+ inhabitants",2000,7,
+Grossstadt,"100,000+ inhabitants",2022,11,1500000

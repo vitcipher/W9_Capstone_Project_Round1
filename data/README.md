@@ -149,6 +149,62 @@ segment closest to "professional" landlords) are shrinking as a share, not growi
 product's natural target is the small-portfolio majority, not enterprise-scale asset
 managers.
 
+## `germany_private_landlord_households_trend.csv` (5 rows — real anchor points from a 23-year annual series)
+
+**This directly answers "the trend of increase in private landlords in Germany."**
+
+**Source:** Oberst, Sagner, Voigtländer, *"Private Vermieter in Deutschland"* (IW Köln,
+commissioned by Kölner Haus- und Grundbesitzerverein and Haus & Grund Düsseldorf, 26 June
+2025). Based on **SOEP v39** (Socio-Economic Panel, DIW Berlin — an annual household survey
+running since 1984, 30,000+ respondents) combined with Zensus 2011 and Zensus 2022.
+[PDF](https://www.iwkoeln.de/fileadmin/user_upload/Studien/Gutachten/PDF/2025/Gutachten-Private-Vermieter-in-Deutschland.pdf)
+
+The report's **Abbildung 4-1** ("Anzahl und Anteil privater Kleinvermieter in Deutschland")
+is a genuine annual bar chart, 2000–2022, 23 data points — but it's a chart image in the
+PDF, not a data table, so I only extracted the values **explicitly stated in the report's
+own text** rather than estimate bar heights by eye (which would risk quietly inventing
+precision that isn't real). Those anchor points:
+
+- 2000–2010: roughly stable, 3.7M–4.2M households, ~10% of the population
+- From 2011: continuous rise begins
+- 2017: share reaches 12%
+- 2019: share reaches 13% and **stays flat through 2022** — i.e. the *rate* has plateaued,
+  even as the *absolute count* keeps growing (population growth + more households)
+- 2022: **5.5M+ households**, i.e. **+1.8M (+49%) vs. 2010** — this is the headline "trend
+  of increase" figure
+
+Separately, the report's introduction states **13% of all households in Germany are
+landlords** (a household-share framing, distinct from the chart's population-share metric
+— both land on ~13% but are not the same denominator; I kept them distinct rather than
+merge them into one number).
+
+**Full 23-year series, visually estimated:** `germany_private_landlord_households_trend_full_estimated.csv`.
+I read each bar/dot position against the chart's gridlines (0–6M in 1M steps for the
+household count; 0–16% in 2%-point steps for the population share) and estimated a value
+per year. **Read this as approximate, not authoritative** — a `confidence` column marks
+which rows are `stated_in_text` (2010, 2017, 2019, 2022 — these match the report's own
+prose exactly) vs. `visual_estimate` (everything else — read off the chart image, not
+published as exact numbers anywhere, and could plausibly be off by roughly ±100–150k
+households or ±0.5 percentage points in either direction). The *shape* of the trend
+(flat 2000–2010, dip around 2003, steady climb from 2011, accelerating from 2017) should be
+directionally right since it's grounded in real gridlines rather than guessed freehand, but
+don't cite the non-anchor years as precise figures in anything that gets fact-checked
+closely — cite the `stated_in_text` anchor file for that, and use this fuller file only for
+a smoother-looking line in the dashboard, with a footnote disclosing the estimation.
+
+## `germany_landlord_households_by_city_size.csv` and `germany_landlord_households_by_state_2022.csv`
+
+Same source/study as above (Oberst/Sagner/Voigtländer 2025, SOEP v39 + Zensus).
+
+- **By city size** (Abbildung 4-2): landlord-household share rose in every settlement type
+  2000→2022, but small towns (≤20,000 residents) both started and stayed highest — 11%→16%,
+  vs. mid-size towns 10%→13% and big cities (100,000+) 7%→11%. Big cities are catching up
+  fastest in relative terms but remain the smallest share in absolute terms.
+- **By state, 2022 snapshot**: sharp east-west and city-state-vs-flächenland divide.
+  Baden-Württemberg (20%) and Bavaria (17%) lead, both with 1M+ landlord households; the
+  five eastern states plus Berlin cluster at 7–8%; Hamburg (9%) sits above Berlin (7%) and
+  Bremen (6%) among the city-states.
+
 ## What this dataset is for — and what it isn't
 
 This is **market/comps data**: real asking rents and Nebenkosten across Germany, useful for

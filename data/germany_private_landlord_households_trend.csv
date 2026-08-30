@@ -1,0 +1,6 @@
+year,households_with_rental_income,share_of_population_pct,note
+2000,3700000,10,"start of series; 2000-2010 described as roughly stable in the 3.7-4.2M / ~10% range"
+2010,3700000,10,"end of the 2000-2010 stable period; continuous rise begins from 2011"
+2017,,12,"share reaches 12% (exact count not stated in text)"
+2019,,13,"share reaches 13% and stays stable through 2022"
+2022,5500000,13,"latest year in series; +1.8M households vs 2010 (a +49% increase over 12 years)"
