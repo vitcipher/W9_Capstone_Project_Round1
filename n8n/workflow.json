@@ -1,3 +1,154 @@
 {
-  "name": "TODO: replace with exported n8n workflow"
+  "name": "Rent/Expense Document Extraction Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "document-upload",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "1a1e2b30-0001-4a11-9c01-000000000001",
+      "name": "Document Uploaded (Webhook)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "notes": "Landlord's app POSTs a document (base64-encoded PDF/image) plus property_id and document_type_hint (rent_receipt | emi_statement | nebenkosten_invoice)."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Basic input validation before spending an LLM call\nconst body = $input.item.json.body || $input.item.json;\nconst required = ['property_id', 'document_type_hint', 'file_base64'];\nconst missing = required.filter((f) => !body[f]);\n\nif (missing.length > 0) {\n  throw new Error(`Missing required field(s): ${missing.join(', ')}`);\n}\n\nreturn {\n  json: {\n    property_id: body.property_id,\n    document_type_hint: body.document_type_hint,\n    file_base64: body.file_base64,\n    uploaded_at: new Date().toISOString()\n  }\n};"
+      },
+      "id": "1a1e2b30-0002-4a11-9c01-000000000002",
+      "name": "Validate Upload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"model\": \"claude-sonnet-5\",\n  \"max_tokens\": 1024,\n  \"system\": \"You extract structured data from German landlord financial documents (rent receipts, EMI/mortgage statements, Nebenkosten invoices). Return ONLY valid JSON with fields: document_type, amount_eur, currency, issue_date, category, extracted_fields (object), confidence (0-1, your own honest estimate of extraction reliability for THIS document). If a field cannot be read confidently, omit it rather than guessing.\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": [\n        { \"type\": \"text\", \"text\": \"Document type hint: \" + $json.document_type_hint + \". Extract the structured fields as JSON.\" },\n        { \"type\": \"image\", \"source\": { \"type\": \"base64\", \"media_type\": \"application/pdf\", \"data\": $json.file_base64 } }\n      ]\n    }\n  ]\n} }}"
+      },
+      "id": "1a1e2b30-0003-4a11-9c01-000000000003",
+      "name": "Extract Fields (Claude)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 0],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "anthropic-api-key",
+          "name": "Anthropic API Key (x-api-key header)"
+        }
+      },
+      "notes": "Credential is referenced by name only - no key is stored in this file. See .env.example / README for setup."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse the model's JSON response and attach our own review-routing logic.\n// This node is also what LangSmith would wrap/trace in the real deployment\n// (see langsmith/README.md) - it's the single point where we decide whether\n// a human needs to look at this before it's saved.\nconst raw = $input.item.json;\nlet extracted;\ntry {\n  const text = raw.content?.[0]?.text ?? raw.content;\n  extracted = JSON.parse(text);\n} catch (err) {\n  return {\n    json: {\n      status: 'extraction_failed',\n      reason: 'Model did not return parseable JSON',\n      raw_response: raw\n    }\n  };\n}\n\n// Design decision, stated explicitly per the research pack's honesty\n// commitment: AI Index 2026's MortgageTax benchmark shows even frontier\n// models don't reliably exceed ~70% accuracy on this document category.\n// We treat 0.70 as a hard ceiling for \"trust without a second look\", not\n// just a routing threshold for obviously-bad extractions.\nconst CONFIDENCE_THRESHOLD = 0.70;\nconst needsReview = (extracted.confidence ?? 0) < CONFIDENCE_THRESHOLD;\n\nreturn {\n  json: {\n    property_id: $('Validate Upload').item.json.property_id,\n    uploaded_at: $('Validate Upload').item.json.uploaded_at,\n    ...extracted,\n    needs_human_review: needsReview,\n    review_reason: needsReview\n      ? `Confidence ${extracted.confidence} below ${CONFIDENCE_THRESHOLD} threshold`\n      : null\n  }\n};"
+      },
+      "id": "1a1e2b30-0004-4a11-9c01-000000000004",
+      "name": "Parse + Apply Confidence Threshold",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 0]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "cond-review",
+              "leftValue": "={{ $json.needs_human_review }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true" }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "1a1e2b30-0005-4a11-9c01-000000000005",
+      "name": "Needs Review?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [880, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Both branches still go back to the landlord for a confirm/edit step -\n// this branch is just flagged as higher-priority / pre-filled with less\n// confidence, per the workflow's human-in-the-loop design.\nreturn {\n  json: {\n    ...$json,\n    ui_state: 'pending_manual_review',\n    ui_message: 'We could not confidently read this document. Please check the pre-filled fields below before saving.'\n  }\n};"
+      },
+      "id": "1a1e2b30-0006-4a11-9c01-000000000006",
+      "name": "Flag: Low Confidence",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, -120]
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  json: {\n    ...$json,\n    ui_state: 'pending_quick_confirm',\n    ui_message: 'We read this document with high confidence. Please glance over it and confirm.'\n  }\n};"
+      },
+      "id": "1a1e2b30-0007-4a11-9c01-000000000007",
+      "name": "Flag: High Confidence",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1100, 120]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}"
+      },
+      "id": "1a1e2b30-0008-4a11-9c01-000000000008",
+      "name": "Return Draft Record to App",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1320, 0],
+      "notes": "In production this record is never auto-saved to the landlord's books from here - the frontend shows it as an editable draft. The 'save' action is a separate, human-triggered step, deliberately outside this workflow."
+    }
+  ],
+  "connections": {
+    "Document Uploaded (Webhook)": {
+      "main": [[{ "node": "Validate Upload", "type": "main", "index": 0 }]]
+    },
+    "Validate Upload": {
+      "main": [[{ "node": "Extract Fields (Claude)", "type": "main", "index": 0 }]]
+    },
+    "Extract Fields (Claude)": {
+      "main": [[{ "node": "Parse + Apply Confidence Threshold", "type": "main", "index": 0 }]]
+    },
+    "Parse + Apply Confidence Threshold": {
+      "main": [[{ "node": "Needs Review?", "type": "main", "index": 0 }]]
+    },
+    "Needs Review?": {
+      "main": [
+        [{ "node": "Flag: Low Confidence", "type": "main", "index": 0 }],
+        [{ "node": "Flag: High Confidence", "type": "main", "index": 0 }]
+      ]
+    },
+    "Flag: Low Confidence": {
+      "main": [[{ "node": "Return Draft Record to App", "type": "main", "index": 0 }]]
+    },
+    "Flag: High Confidence": {
+      "main": [[{ "node": "Return Draft Record to App", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "meta": {
+    "description": "Round 1 POC for the Rent/Expense/EMI Document Extraction Assistant use case (see research/use_cases.md, use case 1). Human-in-the-loop by design: every extraction, regardless of confidence, returns to the landlord as an editable draft rather than being auto-saved.",
+    "templateCredsSetupCompleted": false
+  }
 }

@@ -62,7 +62,7 @@ cp .env.example .env   # fill in any API keys, do not commit .env
 - [x] Sector + company size locked
 - [x] Research pack complete
 - [ ] Dashboard built
-- [ ] n8n POC built
+- [x] n8n POC built
 - [ ] LangSmith sample captured
 - [ ] Cost/timeline estimated
 - [ ] Presented to teaching staff
