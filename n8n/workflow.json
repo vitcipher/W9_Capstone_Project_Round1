@@ -13,11 +13,11 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [0, 0],
-      "notes": "Landlord's app POSTs a document (base64-encoded PDF/image) plus property_id and document_type_hint (rent_receipt | emi_statement | nebenkosten_invoice)."
+      "notes": "Landlord's app POSTs a document (base64-encoded PDF/image), its mime_type, plus property_id and document_type_hint (rental_contract | rent_receipt | emi_statement | nebenkosten_invoice)."
     },
     {
       "parameters": {
-        "jsCode": "// Basic input validation before spending an LLM call\nconst body = $input.item.json.body || $input.item.json;\nconst required = ['property_id', 'document_type_hint', 'file_base64'];\nconst missing = required.filter((f) => !body[f]);\n\nif (missing.length > 0) {\n  throw new Error(`Missing required field(s): ${missing.join(', ')}`);\n}\n\nreturn {\n  json: {\n    property_id: body.property_id,\n    document_type_hint: body.document_type_hint,\n    file_base64: body.file_base64,\n    uploaded_at: new Date().toISOString()\n  }\n};"
+        "jsCode": "// Basic input validation before spending an LLM call\nconst body = $input.item.json.body || $input.item.json;\nconst required = ['property_id', 'document_type_hint', 'mime_type', 'file_base64'];\nconst missing = required.filter((f) => !body[f]);\n\nif (missing.length > 0) {\n  throw new Error(`Missing required field(s): ${missing.join(', ')}`);\n}\n\nconst SUPPORTED_MIME_TYPES = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp'];\nif (!SUPPORTED_MIME_TYPES.includes(body.mime_type)) {\n  throw new Error(`Unsupported mime_type: ${body.mime_type}. Supported: ${SUPPORTED_MIME_TYPES.join(', ')}`);\n}\n\nreturn {\n  json: {\n    property_id: body.property_id,\n    document_type_hint: body.document_type_hint,\n    mime_type: body.mime_type,\n    // Internal flag - mapped to OpenAI's actual input_file/input_image type names in the next node\n    content_block_type: body.mime_type === 'application/pdf' ? 'document' : 'image',\n    file_base64: body.file_base64,\n    uploaded_at: new Date().toISOString()\n  }\n};"
       },
       "id": "1a1e2b30-0002-4a11-9c01-000000000002",
       "name": "Validate Upload",
@@ -28,36 +28,35 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.anthropic.com/v1/messages",
+        "url": "https://api.openai.com/v1/responses",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "anthropic-version", "value": "2023-06-01" },
             { "name": "content-type", "value": "application/json" }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ {\n  \"model\": \"claude-sonnet-5\",\n  \"max_tokens\": 1024,\n  \"system\": \"You extract structured data from German landlord financial documents (rent receipts, EMI/mortgage statements, Nebenkosten invoices). Return ONLY valid JSON with fields: document_type, amount_eur, currency, issue_date, category, extracted_fields (object), confidence (0-1, your own honest estimate of extraction reliability for THIS document). If a field cannot be read confidently, omit it rather than guessing.\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": [\n        { \"type\": \"text\", \"text\": \"Document type hint: \" + $json.document_type_hint + \". Extract the structured fields as JSON.\" },\n        { \"type\": \"image\", \"source\": { \"type\": \"base64\", \"media_type\": \"application/pdf\", \"data\": $json.file_base64 } }\n      ]\n    }\n  ]\n} }}"
+        "jsonBody": "={{ {\n  \"model\": \"gpt-4.1\",\n  \"instructions\": \"You extract structured data from German landlord documents. Return ONLY valid JSON with fields: document_type, category, confidence (0-1, your own honest estimate of extraction reliability for THIS document), and extracted_fields (an object). For rent receipts, EMI/mortgage statements, or Nebenkosten invoices, extracted_fields should include amount_eur, currency, issue_date. For rental contracts/lease agreements, extracted_fields should include tenant_name, landlord_name, property_address, monthly_rent_eur, deposit_eur, lease_start_date, lease_end_date_or_notice_period, special_clauses (array of strings). If a field cannot be read confidently, omit it rather than guessing.\",\n  \"input\": [\n    {\n      \"role\": \"user\",\n      \"content\": [\n        { \"type\": \"input_text\", \"text\": \"Document type hint: \" + $json.document_type_hint + \". Extract the structured fields as JSON.\" },\n        $json.content_block_type === 'document'\n          ? { \"type\": \"input_file\", \"filename\": \"upload.pdf\", \"file_data\": \"data:\" + $json.mime_type + \";base64,\" + $json.file_base64 }\n          : { \"type\": \"input_image\", \"image_url\": \"data:\" + $json.mime_type + \";base64,\" + $json.file_base64 }\n      ]\n    }\n  ]\n} }}"
       },
       "id": "1a1e2b30-0003-4a11-9c01-000000000003",
-      "name": "Extract Fields (Claude)",
+      "name": "Extract Fields (OpenAI)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [440, 0],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "anthropic-api-key",
-          "name": "Anthropic API Key (x-api-key header)"
+          "id": "openai-api-key",
+          "name": "OpenAI API Key (Authorization: Bearer header)"
         }
       },
-      "notes": "Credential is referenced by name only - no key is stored in this file. See .env.example / README for setup."
+      "notes": "Uses the Responses API (not Chat Completions) so a PDF can be sent directly via input_file, without a separate PDF-to-image conversion step. Credential is referenced by name only - no key is stored in this file. See .env.example / README for setup."
     },
     {
       "parameters": {
-        "jsCode": "// Parse the model's JSON response and attach our own review-routing logic.\n// This node is also what LangSmith would wrap/trace in the real deployment\n// (see langsmith/README.md) - it's the single point where we decide whether\n// a human needs to look at this before it's saved.\nconst raw = $input.item.json;\nlet extracted;\ntry {\n  const text = raw.content?.[0]?.text ?? raw.content;\n  extracted = JSON.parse(text);\n} catch (err) {\n  return {\n    json: {\n      status: 'extraction_failed',\n      reason: 'Model did not return parseable JSON',\n      raw_response: raw\n    }\n  };\n}\n\n// Design decision, stated explicitly per the research pack's honesty\n// commitment: AI Index 2026's MortgageTax benchmark shows even frontier\n// models don't reliably exceed ~70% accuracy on this document category.\n// We treat 0.70 as a hard ceiling for \"trust without a second look\", not\n// just a routing threshold for obviously-bad extractions.\nconst CONFIDENCE_THRESHOLD = 0.70;\nconst needsReview = (extracted.confidence ?? 0) < CONFIDENCE_THRESHOLD;\n\nreturn {\n  json: {\n    property_id: $('Validate Upload').item.json.property_id,\n    uploaded_at: $('Validate Upload').item.json.uploaded_at,\n    ...extracted,\n    needs_human_review: needsReview,\n    review_reason: needsReview\n      ? `Confidence ${extracted.confidence} below ${CONFIDENCE_THRESHOLD} threshold`\n      : null\n  }\n};"
+        "jsCode": "// Parse the model's JSON response and attach our own review-routing logic.\n// This node is also what LangSmith would wrap/trace in the real deployment\n// (see langsmith/README.md) - it's the single point where we decide whether\n// a human needs to look at this before it's saved.\nconst raw = $input.item.json;\nlet extracted;\ntry {\n  // OpenAI Responses API shape: { output: [ { type: 'message', content: [ { type: 'output_text', text: '...' } ] } ] }\n  const messageItem = (raw.output || []).find((item) => item.type === 'message');\n  const textPart = messageItem?.content?.find((c) => c.type === 'output_text');\n  const text = textPart?.text ?? raw.output_text;\n  extracted = JSON.parse(text);\n} catch (err) {\n  return {\n    json: {\n      status: 'extraction_failed',\n      reason: 'Model did not return parseable JSON',\n      raw_response: raw\n    }\n  };\n}\n\n// Design decision, stated explicitly per the research pack's honesty\n// commitment: AI Index 2026's MortgageTax benchmark shows even frontier\n// models don't reliably exceed ~70% accuracy on this document category.\n// We treat 0.70 as a hard ceiling for \"trust without a second look\", not\n// just a routing threshold for obviously-bad extractions.\nconst CONFIDENCE_THRESHOLD = 0.70;\nconst needsReview = (extracted.confidence ?? 0) < CONFIDENCE_THRESHOLD;\n\nreturn {\n  json: {\n    property_id: $('Validate Upload').item.json.property_id,\n    uploaded_at: $('Validate Upload').item.json.uploaded_at,\n    ...extracted,\n    needs_human_review: needsReview,\n    review_reason: needsReview\n      ? `Confidence ${extracted.confidence} below ${CONFIDENCE_THRESHOLD} threshold`\n      : null\n  }\n};"
       },
       "id": "1a1e2b30-0004-4a11-9c01-000000000004",
       "name": "Parse + Apply Confidence Threshold",
@@ -124,9 +123,9 @@
       "main": [[{ "node": "Validate Upload", "type": "main", "index": 0 }]]
     },
     "Validate Upload": {
-      "main": [[{ "node": "Extract Fields (Claude)", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "Extract Fields (OpenAI)", "type": "main", "index": 0 }]]
     },
-    "Extract Fields (Claude)": {
+    "Extract Fields (OpenAI)": {
       "main": [[{ "node": "Parse + Apply Confidence Threshold", "type": "main", "index": 0 }]]
     },
     "Parse + Apply Confidence Threshold": {

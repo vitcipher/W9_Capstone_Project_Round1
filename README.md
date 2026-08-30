@@ -28,6 +28,8 @@ capstone-round1/
 ├── n8n/
 │   ├── workflow.json
 │   └── workflow_documentation.md
+├── app/
+│   └── streamlit_app.py         # demo frontend that calls the n8n POC
 ├── langsmith/
 ├── cost_estimation/
 │   ├── cost_analysis.md
@@ -53,7 +55,9 @@ cp .env.example .env   # fill in any API keys, do not commit .env
   `dashboard/`, openable in Tableau Desktop/Public if the link isn't
   reachable).
 - **POC:** import `n8n/workflow.json` into n8n, or see the annotated
-  screenshots in `n8n/workflow_documentation.md`.
+  screenshots in `n8n/workflow_documentation.md`. Run `streamlit run
+  app/streamlit_app.py` for an interactive demo frontend (upload a document,
+  see the AI's draft, confirm before it's "saved").
 - **Monitoring:** see `langsmith/` for the dataset/experiment link or export.
 - **Decision:** see `feedback/round1_decision.md` for the keep/change call
   after the teaching-staff presentation.

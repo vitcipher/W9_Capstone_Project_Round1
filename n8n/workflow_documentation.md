@@ -1,13 +1,16 @@
 # n8n POC Documentation
 
 ## What it does
-A landlord's app POSTs an uploaded document (a rent receipt, EMI/mortgage statement, or
-Nebenkosten invoice, base64-encoded) plus a `property_id` to a webhook. The workflow sends
-the document to Claude with an extraction prompt, parses the structured JSON response,
-applies a confidence threshold, and returns a **draft record** to the app for the landlord
-to review and confirm — nothing is auto-saved to their books.
+A landlord's app (in Round 1, the Streamlit app in `app/streamlit_app.py`) POSTs an
+uploaded document (a rental contract, rent receipt, EMI/mortgage statement, or Nebenkosten
+invoice — base64-encoded, PDF or image) plus a `property_id` to a webhook. The workflow
+sends the document to OpenAI (via the Responses API, so PDFs can be sent directly without a
+separate image-conversion step) with an extraction prompt, parses the structured JSON
+response, applies a confidence threshold, and returns a **draft record** to the app for the
+landlord to review and confirm — nothing is auto-saved to their books.
 
-Trigger: `POST /webhook/document-upload` with `{ property_id, document_type_hint, file_base64 }`.
+Trigger: `POST /webhook/document-upload` with
+`{ property_id, document_type_hint, mime_type, file_base64 }`.
 
 ## Which use case it demonstrates
 Use case 1 in `research/use_cases.md` — the Rent/Expense/EMI Document Extraction
@@ -54,18 +57,30 @@ demonstrates the transparency story the pitch is built on (see
   up in this Round 1 slice (see `langsmith/README.md`).
 
 ## How to run it
+
+**Option A — via the Streamlit app (recommended for the demo):**
 1. Import `n8n/workflow.json` into n8n (Workflows → Import from File).
-2. Create an HTTP Header Auth credential named to match `Anthropic API Key (x-api-key
-   header)` in the `Extract Fields (Claude)` node, with header name `x-api-key` and your
-   own Anthropic API key as the value — see `.env.example` (never commit real keys).
-3. Activate the workflow and POST a test payload to the webhook URL n8n shows you, e.g.:
-   ```bash
-   curl -X POST https://<your-n8n-instance>/webhook/document-upload \
-     -H "Content-Type: application/json" \
-     -d '{"property_id":"P01","document_type_hint":"rent_receipt","file_base64":"<base64 PDF>"}'
-   ```
-4. Expected output: a JSON draft record with `extracted_fields`, `confidence`,
-   `needs_human_review`, and a `ui_message` telling the reviewer what to check.
+2. Create an HTTP Header Auth credential named to match `OpenAI API Key (Authorization:
+   Bearer header)` in the `Extract Fields (OpenAI)` node, with header name
+   `Authorization` and value `Bearer <your OpenAI API key>` — see `.env.example` (never
+   commit real keys).
+3. Activate the workflow and copy its webhook URL.
+4. Run `streamlit run app/streamlit_app.py`, paste the webhook URL into the sidebar, and
+   upload a (synthetic) document.
+
+**Option B — direct curl test, bypassing the app:**
+```bash
+curl -X POST https://<your-n8n-instance>/webhook/document-upload \
+  -H "Content-Type: application/json" \
+  -d '{"property_id":"P01","document_type_hint":"rent_receipt","mime_type":"application/pdf","file_base64":"<base64 PDF>"}'
+```
+Expected output either way: a JSON draft record with `extracted_fields`, `confidence`,
+`needs_human_review`, and a `ui_message` telling the reviewer what to check.
+
+**Option C — skip n8n entirely:** in the Streamlit app's sidebar, switch "Extraction
+backend" to "Direct OpenAI API" and set `OPENAI_API_KEY` in `.env`. Useful for testing
+without standing up an n8n instance, but keep in mind the actual Round 1 POC deliverable
+is the n8n workflow — Option C is a convenience fallback, not a replacement for it.
 
 ## Screenshots
 Add annotated screenshots here once you've run it against a real (synthetic) sample
