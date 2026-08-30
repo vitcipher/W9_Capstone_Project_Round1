@@ -157,7 +157,10 @@ managers.
 commissioned by Kölner Haus- und Grundbesitzerverein and Haus & Grund Düsseldorf, 26 June
 2025). Based on **SOEP v39** (Socio-Economic Panel, DIW Berlin — an annual household survey
 running since 1984, 30,000+ respondents) combined with Zensus 2011 and Zensus 2022.
-[PDF](https://www.iwkoeln.de/fileadmin/user_upload/Studien/Gutachten/PDF/2025/Gutachten-Private-Vermieter-in-Deutschland.pdf)
+Original: [iwkoeln.de PDF](https://www.iwkoeln.de/fileadmin/user_upload/Studien/Gutachten/PDF/2025/Gutachten-Private-Vermieter-in-Deutschland.pdf) —
+a copy is kept in this repo as `source_iwkoeln_private_vermieter_2025.pdf` since it's the
+primary source for four of the CSVs in this folder (this file, plus the city-size and
+state-level breakdowns below).
 
 The report's **Abbildung 4-1** ("Anzahl und Anteil privater Kleinvermieter in Deutschland")
 is a genuine annual bar chart, 2000–2022, 23 data points — but it's a chart image in the
