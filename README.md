@@ -68,6 +68,6 @@ cp .env.example .env   # fill in any API keys, do not commit .env
 - [ ] Dashboard built
 - [x] n8n POC built
 - [ ] LangSmith sample captured
-- [ ] Cost/timeline estimated
+- [x] Cost/timeline estimated
 - [ ] Presented to teaching staff
 - [ ] `round1_decision.md` written
