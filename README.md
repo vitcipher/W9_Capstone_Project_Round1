@@ -1,9 +1,13 @@
 # Capstone — Round 1: AI Consulting Pitch
 
 ## Scenario
-- **Sector:** TBD
-- **Company size:** TBD
-- **One-line pitch:** TBD
+- **Sector:** Real estate — PropTech / property management for private landlords
+- **Company size:** Medium (existing property listing platform, expanding into a new
+  product line — see `research/sector_research.md` for the reasoning)
+- **One-line pitch:** Chleo's listing platform already has private landlords as users;
+  add a property-management module that turns their rent/expense/EMI/Nebenkosten
+  documents into a real profit-and-loss dashboard, with AI doing the tedious data entry
+  and a human confirming anything the AI isn't confident about.
 
 ## Overview
 Pitch package for Chleo: sector research, BI dashboard, light n8n POC,
@@ -55,8 +59,8 @@ cp .env.example .env   # fill in any API keys, do not commit .env
   after the teaching-staff presentation.
 
 ## Status
-- [ ] Sector + company size locked
-- [ ] Research pack complete
+- [x] Sector + company size locked
+- [x] Research pack complete
 - [ ] Dashboard built
 - [ ] n8n POC built
 - [ ] LangSmith sample captured
