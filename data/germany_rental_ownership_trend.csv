@@ -1,0 +1,14 @@
+year,metric,value,unit,geography,source
+2011,total_dwellings,40545308,count,Germany,Destatis Zensus 2011
+2022,total_dwellings,43106589,count,Germany,Destatis Zensus 2022
+2011,dwellings_in_condo_ownership_WEG,8956419,count,Germany,Destatis Zensus 2011
+2022,dwellings_in_condo_ownership_WEG,9277939,count,Germany,Destatis Zensus 2022
+2022,rented_dwellings_share,53.5,percent,Germany,Destatis Zensus 2022
+2022,owner_occupier_household_share,42,percent,Germany,Destatis Zensus 2022
+2022,tenant_household_share,58,percent,Germany,Destatis Zensus 2022
+2006,owner_occupier_household_share,41,percent,Germany,Destatis Mikrozensus (historical, pre-2020 methodology)
+2011,owner_occupier_household_share,45.1,percent,Germany,Destatis Mikrozensus (historical, pre-2020 methodology)
+2023,tenant_population_share,52,percent,Germany,Eurostat Housing in Europe 2024 edition
+2024,tenant_population_share,53,percent,Germany,Eurostat Housing in Europe 2025 edition
+2024,home_owner_population_share_EU_average,68,percent,EU-27,Eurostat Housing in Europe 2025 edition
+2025,germany_housing_stock_total,44000000,count,Germany,Destatis press release PD26_250_31231

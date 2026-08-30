@@ -1,0 +1,9 @@
+property_id,nickname,city,region,living_space_sqm,no_rooms,year_construction,purchase_year,purchase_price,current_valuation_estimate,loan_amount,interest_rate_annual,loan_term_years,monthly_emi,monthly_base_rent,monthly_nebenkosten_budget,monthly_property_mgmt_fee,monthly_maintenance_reserve,monthly_insurance,monthly_property_tax
+P01,Musterstraße 12,Berlin,Berlin,68,2,1975,2019,225200.0,247020.0,139180.0,0.0395,25,730.81,782.0,201.21,39.1,31.36,24.87,16.89
+P02,Beispielweg 4,Leipzig,Sachsen,54,2,1998,2020,74900.0,86110.0,45086.0,0.0388,30,212.14,367.2,162.99,18.36,29.48,18.38,5.62
+P03,Probeallee 7,München,Bayern,82,3,1965,2017,428000.0,543399.0,276626.0,0.0378,30,1285.81,1230.0,208.66,61.5,43.49,17.4,32.1
+P04,Testring 21,Dortmund,Nordrhein_Westfalen,71,3,1988,2021,111800.0,145038.0,75185.0,0.0329,25,367.98,582.2,178.83,29.11,43.99,22.96,8.38
+P05,Musterplatz 3,Dresden,Sachsen,60,2,2005,2022,83200.0,105683.0,53416.0,0.0392,30,252.56,408.0,138.7,20.4,35.61,15.64,6.24
+P06,Beispielstraße 9,Frankfurt am Main,Hessen,75,3,1992,2018,217800.0,264591.0,141253.0,0.0389,25,737.03,825.0,171.3,41.25,42.78,18.65,16.33
+P07,Probeweg 15,Hannover,Niedersachsen,58,2,2001,2023,94000.0,115417.0,56520.0,0.0333,25,277.83,435.0,168.94,21.75,32.51,15.7,7.05
+P08,Testallee 30,Potsdam,Brandenburg,64,2,2010,2021,128400.0,149811.0,83298.0,0.0371,25,426.45,563.2,179.17,28.16,40.95,18.19,9.63
