@@ -30,6 +30,8 @@ capstone-round1/
 │   └── workflow_documentation.md
 ├── app/
 │   └── streamlit_app.py         # demo frontend that calls the n8n POC
+├── presentation/
+│   └── slides.html              # Round 1 pitch deck, open directly in a browser
 ├── langsmith/
 ├── cost_estimation/
 │   ├── cost_analysis.md
@@ -59,15 +61,19 @@ cp .env.example .env   # fill in any API keys, do not commit .env
   app/streamlit_app.py` for an interactive demo frontend (upload a document,
   see the AI's draft, confirm before it's "saved").
 - **Monitoring:** see `langsmith/` for the dataset/experiment link or export.
+- **Presentation:** open `presentation/slides.html` directly in any browser — arrow
+  keys or the left-edge tab rail navigate between slides. No build step, no dependency
+  on this being viewed inside Claude.
 - **Decision:** see `feedback/round1_decision.md` for the keep/change call
   after the teaching-staff presentation.
 
 ## Status
 - [x] Sector + company size locked
 - [x] Research pack complete
-- [ ] Dashboard built
+- [ ] Dashboard built (spec complete in `dashboard/dashboard_documentation.md`, not yet built in Tableau)
 - [x] n8n POC built
-- [ ] LangSmith sample captured
+- [ ] LangSmith sample captured (script verified against live OpenAI API; no trace yet — `LANGSMITH_API_KEY` not set)
 - [x] Cost/timeline estimated
+- [x] Presentation deck built (`presentation/slides.html`)
 - [ ] Presented to teaching staff
 - [ ] `round1_decision.md` written
