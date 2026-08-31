@@ -72,7 +72,7 @@ cp .env.example .env   # fill in any API keys, do not commit .env
 - [x] Research pack complete
 - [ ] Dashboard built (spec complete in `dashboard/dashboard_documentation.md`, not yet built in Tableau)
 - [x] n8n POC built
-- [ ] LangSmith sample captured (script verified against live OpenAI API; no trace yet — `LANGSMITH_API_KEY` not set)
+- [x] LangSmith sample captured (4/4 runs verified present via the LangSmith API — project `capstone-round1-property-extraction`, EU workspace)
 - [x] Cost/timeline estimated
 - [x] Presentation deck built (`presentation/slides.html`)
 - [ ] Presented to teaching staff
