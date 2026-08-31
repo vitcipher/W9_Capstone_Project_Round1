@@ -1,0 +1,9 @@
+request_id,property_id,description,urgency,status,created_date
+MR001,P01,Heating not working in living room,High,In Progress,2026-08-15
+MR002,P03,Kitchen faucet dripping constantly,Low,New,2026-08-22
+MR003,P04,Window seal drafty - cold air coming through,Medium,New,2026-08-25
+MR004,P02,Light fixture in hallway flickering,Low,Resolved,2026-07-30
+MR005,P06,Possible mold near bathroom ceiling,High,In Progress,2026-08-20
+MR006,P07,Intercom buzzer not working,Medium,New,2026-08-28
+MR007,P01,Smoke detector battery beeping,Low,Resolved,2026-08-10
+MR008,P08,Balcony door won't lock properly,Medium,New,2026-08-29

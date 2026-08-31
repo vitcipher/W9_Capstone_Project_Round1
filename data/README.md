@@ -63,6 +63,17 @@ rent nominally "covers" the mortgage — that gap between "rent vs. EMI" and "tr
 flow" is deliberately the core insight the dashboard should surface, since it's exactly the
 kind of thing a private landlord doing their own books tends to miss.
 
+## `synthetic_maintenance_requests.csv` (8 rows — fully synthetic)
+
+Seed data for the app's Maintenance Requests tab (`app/streamlit_app.py`). 8 example
+requests spread across the 8 properties, a mix of urgency (Low/Medium/High) and status
+(New/In Progress/Resolved) so the tab isn't empty on first load. This is a plain CRUD
+feature with no AI involved — it's the one "must-have" feature (per a competitive review of
+landlord-focused software: Innago, TurboTenant, Landlord Studio, Baselane, etc.) that needed
+zero new integrations to build, unlike rent collection (payment processor) or tenant
+screening (credit bureau access, and separately out of scope — see
+`research/opportunities_risks.md`).
+
 ## `germany_rental_ownership_trend.csv` (13 rows — compiled published statistics, not row-level data)
 
 For the "why now" market chart: growth in German rental/buy-to-let housing. **Important
