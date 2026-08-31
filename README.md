@@ -58,8 +58,12 @@ cp .env.example .env   # fill in any API keys, do not commit .env
   reachable).
 - **POC:** import `n8n/workflow.json` into n8n, or see the annotated
   screenshots in `n8n/workflow_documentation.md`. Run `streamlit run
-  app/streamlit_app.py` for an interactive demo frontend (upload a document,
-  see the AI's draft, confirm before it's "saved").
+  app/streamlit_app.py` for an interactive demo frontend — 3 tabs: Document
+  Extraction (upload → AI draft → confirm), Maintenance Requests (plain CRUD,
+  the one must-have feature from a competitive review that fit a 3-day
+  budget), and Bank Feed (a stretch feature — real PSD2-style open banking
+  via Enable Banking's Mock ASPSP; optional, needs its own setup, see
+  `.env.example`).
 - **Monitoring:** see `langsmith/` for the dataset/experiment link or export.
 - **Presentation:** open `presentation/slides.html` directly in any browser — arrow
   keys or the left-edge tab rail navigate between slides. No build step, no dependency

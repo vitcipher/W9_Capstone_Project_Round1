@@ -19,6 +19,12 @@ data/synthetic_maintenance_requests.csv; edits live only in this session
 real database). Scoped deliberately small - see the "buildable in 3 days"
 assessment that motivated this feature: it's the one must-have from the
 competitive feature landscape that needed zero new external integrations.
+
+Tab 3, Bank Feed: the deliberate exception to "no new integrations" - a
+real PSD2-style open banking connection via Enable Banking's Mock ASPSP
+(fake test bank, no real bank account needed). See app/bank_feed.py for
+the auth flow and README/.env.example for setup. This is explicitly a
+stretch feature, not a Round 1 core deliverable.
 """
 
 import base64
@@ -27,6 +33,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 
+import bank_feed
 import pandas as pd
 import requests
 import streamlit as st
@@ -164,7 +171,9 @@ portfolio = load_portfolio()
 if "maintenance_requests" not in st.session_state:
     st.session_state.maintenance_requests = load_maintenance_seed()
 
-tab_extract, tab_maintenance = st.tabs(["📄 Document Extraction", "🔧 Maintenance Requests"])
+tab_extract, tab_maintenance, tab_bank = st.tabs(
+    ["📄 Document Extraction", "🔧 Maintenance Requests", "🏦 Bank Feed"]
+)
 
 with st.sidebar:
     st.header("Settings")
@@ -357,4 +366,98 @@ with tab_maintenance:
                     [st.session_state.maintenance_requests, new_row], ignore_index=True
                 )
                 st.success("Request submitted.")
+                st.rerun()
+
+with tab_bank:
+    st.caption(
+        "Real PSD2-style open banking via Enable Banking's Mock ASPSP (fake test bank, no "
+        "real bank account needed). A deliberate stretch feature beyond Round 1's core "
+        "scope — see app/bank_feed.py for the auth flow, README/.env.example for setup."
+    )
+
+    REDIRECT_URL = os.environ.get("ENABLE_BANKING_REDIRECT_URL", "http://localhost:8501")
+
+    if not bank_feed.is_configured():
+        st.warning(
+            "**Not configured yet.**\n\n"
+            f"1. Register an app at [enablebanking.com/cp/applications](https://enablebanking.com/cp/applications) "
+            f"with redirect URL `{REDIRECT_URL}`\n"
+            "2. In the Control Panel, add some test accounts/transactions under the **Mock ASPSP** tab\n"
+            "3. Add `ENABLE_BANKING_APP_ID` and `ENABLE_BANKING_PRIVATE_KEY_PATH` to `.env`, then reload this page"
+        )
+    else:
+        if "bank_accounts" not in st.session_state:
+            st.session_state.bank_accounts = None
+
+        # Handle the consent-flow callback: Enable Banking redirects the user
+        # back here with ?code=...&state=... after "authorizing" at the (mock) bank.
+        query_params = st.query_params
+        if "code" in query_params and st.session_state.bank_accounts is None:
+            with st.spinner("Completing bank connection..."):
+                try:
+                    session = bank_feed.create_session(query_params["code"])
+                    st.session_state.bank_accounts = session.get("accounts", [])
+                    st.query_params.clear()
+                    st.success(f"Connected — {len(st.session_state.bank_accounts)} account(s) found.")
+                except Exception as exc:  # noqa: BLE001
+                    st.error(f"Failed to complete connection: {exc}")
+
+        if not st.session_state.bank_accounts:
+            with st.expander("Find your Mock ASPSP's exact name (needed below)"):
+                discover_country = st.text_input("Country code", value="DE", key="discover_country")
+                if st.button("Discover banks"):
+                    try:
+                        aspsps = bank_feed.list_aspsps(discover_country)
+                        st.dataframe(pd.DataFrame(aspsps))
+                    except Exception as exc:  # noqa: BLE001
+                        st.error(f"Could not list banks: {exc}")
+
+            st.subheader("Connect a bank")
+            conn_col1, conn_col2 = st.columns(2)
+            with conn_col1:
+                aspsp_name = st.text_input(
+                    "Bank name (exact — from Discover banks above, or your Control Panel's Mock ASPSP tab)",
+                    placeholder="e.g. Mock ASPSP",
+                )
+            with conn_col2:
+                aspsp_country = st.text_input("Bank country code", value="DE")
+
+            if st.button("Start authorization", type="primary", disabled=not aspsp_name):
+                try:
+                    auth = bank_feed.start_authorization(aspsp_name, aspsp_country, REDIRECT_URL)
+                    st.session_state.bank_auth_state = auth.get("state")
+                    st.link_button("Authorize with bank →", auth["url"])
+                    st.caption(
+                        "Opens the (mock) bank's consent page in a new tab. You'll be "
+                        "redirected back here automatically once you approve."
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    st.error(f"Could not start authorization: {exc}")
+        else:
+            st.success(f"{len(st.session_state.bank_accounts)} account(s) connected.")
+            account_options = {
+                a.get("uid"): f"{a.get('uid')} — {a.get('product', a.get('name', 'account'))}"
+                for a in st.session_state.bank_accounts
+            }
+            selected_uid = st.selectbox(
+                "Account", list(account_options.keys()), format_func=lambda uid: account_options[uid]
+            )
+
+            bcol1, bcol2 = st.columns(2)
+            with bcol1:
+                if st.button("Fetch balances"):
+                    try:
+                        st.json(bank_feed.get_balances(selected_uid))
+                    except Exception as exc:  # noqa: BLE001
+                        st.error(f"Could not fetch balances: {exc}")
+            with bcol2:
+                if st.button("Fetch transactions"):
+                    try:
+                        txns = bank_feed.get_transactions(selected_uid)
+                        st.dataframe(pd.DataFrame(txns))
+                    except Exception as exc:  # noqa: BLE001
+                        st.error(f"Could not fetch transactions: {exc}")
+
+            if st.button("Disconnect"):
+                st.session_state.bank_accounts = None
                 st.rerun()
