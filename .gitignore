@@ -1,0 +1,28 @@
+# Environment / secrets
+.env
+*.env
+!.env.example
+*.pem
+secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# OS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+
+# Large course material PDFs (kept locally, not versioned)
+*.pdf
+# Exception: small primary-source PDFs cited by the research pack
+!data/source_*.pdf
+
+# Large data files (kept locally; a small sample is committed instead)
+data/germany_rental_listings_clean.csv
