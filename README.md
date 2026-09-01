@@ -7,7 +7,7 @@
 - **One-line pitch:** Chleo's listing platform already has private landlords as users;
   add a property-management module that turns their rent/expense/EMI/Nebenkosten
   documents into a real profit-and-loss dashboard, with AI doing the tedious data entry
-  and a human confirming anything the AI isn't confident about.
+  and a human confirming anything the AI isn't confident about. Also further provide a AI Tax advisor Bot, a Tenants complaints management feature, and also later Automated Rental Contract Generation.
 
 ## Overview
 Round 1 mandatory deliverables for Chleo's pitch: sector research, BI dashboard, light
