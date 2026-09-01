@@ -1,9 +1,9 @@
 # Round 1 Decision
 
 Recorded after presenting `presentation/Capstone Consulting Round 1.pptx` to the teaching
-staff (the presented deck — adapted from the `slides.html`/`slides.pptx` draft in this
-repo, with updated statistics and a monetization/unit-economics appendix; see
-`presentation/README.md` for what changed between draft and presented versions).
+staff (the presented deck — adapted from an earlier working draft, with updated statistics
+and a monetization/unit-economics appendix; see `presentation/README.md` for what changed
+between draft and presented versions).
 
 ## Feedback summary
 - Overall verdict: **keep** — the sector, use case, and company-size framing landed as
@@ -22,14 +22,15 @@ document extraction → portfolio dashboard), and company size (Medium) all carr
 into Round 2 unchanged.
 
 ## What I'll deepen in Round 2
-- **Use Supabase for real persistence + auth** — acted on already, not just planned: see
-  `supabase/schema.sql` and `app/db.py`. Properties, confirmed document extractions, and
-  maintenance requests are now real Postgres rows behind Row Level Security
-  (`owner_id = auth.uid()`), not session-state/CSV. Landlords sign up/log in with a real
-  email + password; one landlord's tenants/documents/properties are private from another's
-  at the database layer, not just filtered in app code.
+- **Use Supabase for real persistence + auth** — acted on already, not just planned, in
+  the working prototype built alongside this pitch (not duplicated in this trimmed Round 1
+  submission repo). Properties, confirmed document extractions, and maintenance requests
+  are real Postgres rows behind Row Level Security (`owner_id = auth.uid()`), not
+  session-state/CSV. Landlords sign up/log in with a real email + password; one landlord's
+  tenants/documents/properties are private from another's at the database layer, not just
+  filtered in app code.
 - **Reduce bank-connection scope accordingly** — the Enable Banking Mock ASPSP integration
-  (`app/bank_feed.py`) stays as a working, de-risked demo (proof the technical path is
+  in that prototype stays as a working, de-risked demo (proof the technical path is
   viable) but is deliberately *not* being built out further or wired into Supabase yet,
   per the feedback above.
 - **Use case:** the rent/expense/lease document extraction assistant

@@ -1,9 +1,11 @@
 # n8n POC Documentation
 
 ## What it does
-A landlord's app (in Round 1, the Streamlit app in `app/streamlit_app.py`) POSTs an
-uploaded document (a rental contract, rent receipt, EMI/mortgage statement, or Nebenkosten
-invoice — base64-encoded, PDF or image) plus a `property_id` to a webhook. The workflow
+A landlord's app POSTs an uploaded document (a rental contract, rent receipt,
+EMI/mortgage statement, or Nebenkosten invoice — base64-encoded, PDF or image) plus a
+`property_id` to a webhook (in the fuller working prototype built alongside this pitch,
+that caller is a Streamlit app — not included in this trimmed Round 1 submission; see
+"How to run it" below for a standalone way to trigger it). The workflow
 sends the document to OpenAI (via the Responses API, so PDFs can be sent directly without a
 separate image-conversion step) with an extraction prompt, parses the structured JSON
 response, applies a confidence threshold, and returns a **draft record** to the app for the
@@ -58,29 +60,24 @@ demonstrates the transparency story the pitch is built on (see
 
 ## How to run it
 
-**Option A — via the Streamlit app (recommended for the demo):**
 1. Import `n8n/workflow.json` into n8n (Workflows → Import from File).
 2. Create an HTTP Header Auth credential named to match `OpenAI API Key (Authorization:
    Bearer header)` in the `Extract Fields (OpenAI)` node, with header name
    `Authorization` and value `Bearer <your OpenAI API key>` — see `.env.example` (never
    commit real keys).
 3. Activate the workflow and copy its webhook URL.
-4. Run `streamlit run app/streamlit_app.py`, paste the webhook URL into the sidebar, and
-   upload a (synthetic) document.
-
-**Option B — direct curl test, bypassing the app:**
+4. Trigger it directly with curl (or Postman/Insomnia):
 ```bash
 curl -X POST https://<your-n8n-instance>/webhook/document-upload \
   -H "Content-Type: application/json" \
   -d '{"property_id":"P01","document_type_hint":"rent_receipt","mime_type":"application/pdf","file_base64":"<base64 PDF>"}'
 ```
-Expected output either way: a JSON draft record with `extracted_fields`, `confidence`,
+Expected output: a JSON draft record with `extracted_fields`, `confidence`,
 `needs_human_review`, and a `ui_message` telling the reviewer what to check.
 
-**Option C — skip n8n entirely:** in the Streamlit app's sidebar, switch "Extraction
-backend" to "Direct OpenAI API" and set `OPENAI_API_KEY` in `.env`. Useful for testing
-without standing up an n8n instance, but keep in mind the actual Round 1 POC deliverable
-is the n8n workflow — Option C is a convenience fallback, not a replacement for it.
+(In the fuller working prototype built alongside this pitch, a Streamlit app is the
+actual caller — upload a document in its UI instead of hand-building the curl payload.
+That app isn't included in this trimmed Round 1 submission repo.)
 
 ## Screenshots
 Add annotated screenshots here once you've run it against a real (synthetic) sample

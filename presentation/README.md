@@ -2,15 +2,12 @@
 
 ## What was actually presented
 **`Capstone Consulting Round 1.pptx`** — this is the deck presented to the teaching staff
-and is the Round 1 submission artifact. It started from `slides.html`/`slides.pptx` (the
-design draft in this folder, built with `generate_pptx.py`) and was then edited directly
-in Google Slides before presenting: updated statistics, an added
-monetization/unit-economics appendix, a real Tableau Public link, a real LangSmith trace
-screenshot, and the recorded Round 1 decision as its closing slide.
-
-`slides.html` and `slides.pptx` (+ `generate_pptx.py`) stay in this folder as the design
-draft/generator — not the submitted version, but the source the presented deck was
-adapted from, and a reusable base if the visual identity needs to be regenerated later.
+and is the Round 1 submission artifact. It started from an earlier HTML/CSS-based design
+draft (built during initial prep, kept in the fuller development repo rather than
+duplicated in this trimmed Round 1 submission) and was then edited directly in Google
+Slides before presenting: updated statistics, an added monetization/unit-economics
+appendix, a real Tableau Public link, a real LangSmith trace screenshot, and the recorded
+Round 1 decision as its closing slide.
 
 ## What changed between the draft and the presented deck
 

@@ -10,43 +10,39 @@
   and a human confirming anything the AI isn't confident about.
 
 ## Overview
-Pitch package for Chleo: sector research, BI dashboard, light n8n POC,
-LangSmith monitoring sample, cost/timeline estimate, and a presentation to
-the teaching staff.
+Round 1 mandatory deliverables for Chleo's pitch: sector research, BI dashboard, light
+n8n POC, LangSmith monitoring sample, cost/timeline estimate, and the presentation given
+to the teaching staff, plus the recorded decision. This repo is trimmed to just those
+required deliverables — the fuller working prototype (Streamlit app + Supabase backend)
+that grew out of this pitch lives in a separate development repo, out of scope for the
+Round 1 submission itself.
 
 ## Repo structure
 ```
-capstone-round1/
-├── data/                     # raw/sample data used for research + dashboard
-├── research/
-│   ├── sector_research.md
-│   ├── opportunities_risks.md
-│   └── use_cases.md
-├── dashboard/
-│   ├── dashboard.twbx           # local workbook backup (optional)
-│   └── dashboard_documentation.md   # includes Tableau Cloud link
-├── n8n/
-│   ├── workflow.json
-│   └── workflow_documentation.md
-├── app/
-│   ├── streamlit_app.py         # frontend: auth-gated, 3 tabs
-│   ├── db.py                    # Supabase persistence + auth helpers
-│   └── bank_feed.py             # Enable Banking (Mock ASPSP) integration
-├── supabase/
-│   └── schema.sql               # run once in the Supabase SQL Editor
-├── presentation/
-│   ├── Capstone Consulting Round 1.pptx   # SUBMITTED deck — what was actually presented
-│   ├── README.md                # what changed between the draft below and the presented deck
-│   └── slides.html              # design draft/generator, not the submitted version
-├── langsmith/
-├── cost_estimation/
-│   ├── cost_analysis.md
-│   └── timeline_estimate.md
-├── feedback/
-│   └── round1_decision.md
-├── requirements.txt
+research/
+├── sector_research.md
+├── opportunities_risks.md
+└── use_cases.md
+dashboard/
+└── dashboard_documentation.md   # includes the published Tableau Public link
+n8n/
+├── workflow.json
+└── workflow_documentation.md
+langsmith/
 ├── README.md
-└── .env.example
+└── run_monitoring_sample.py
+cost_estimation/
+├── cost_analysis.md
+└── timeline_estimate.md
+presentation/
+├── Capstone Consulting Round 1.pptx   # the deck actually presented — the submission
+└── README.md                          # what changed vs. the earlier working draft
+feedback/
+└── round1_decision.md
+data/                            # data sources backing the research pack + dashboard
+requirements.txt
+README.md
+.env.example
 ```
 
 ## Setup
@@ -56,39 +52,35 @@ source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env   # fill in any API keys, do not commit .env
 ```
+Only `langsmith/run_monitoring_sample.py` needs these dependencies/keys — the dashboard
+and n8n workflow are viewed/imported directly, no Python required.
 
 ## How to view the deliverables
+- **Research pack:** `research/sector_research.md`, `opportunities_risks.md`,
+  `use_cases.md` — data sources cited inline, backing data in `data/`.
 - **Dashboard:** published on Tableau Public — link in
-  `dashboard/dashboard_documentation.md` (a `.twbx` backup may also be in
-  `dashboard/`, openable in Tableau Desktop/Public if the link isn't
-  reachable). Note: that doc also flags a known data bug in the published
-  chart worth fixing before further grading.
-- **POC:** import `n8n/workflow.json` into n8n, or see the annotated
-  screenshots in `n8n/workflow_documentation.md`. Run `streamlit run
-  app/streamlit_app.py` for an interactive demo frontend — needs a Supabase
-  project first (create one at supabase.com, run `supabase/schema.sql` in its
-  SQL Editor, set `SUPABASE_URL`/`SUPABASE_ANON_KEY` in `.env` — see
-  `app/db.py`). Sign up with any email/password (private per account, enforced
-  via Postgres Row Level Security, not just app-level filtering), then use
-  "Load demo portfolio" to seed 8 example properties. 3 tabs: Document
-  Extraction (upload → AI draft → confirm, saved to your account), Maintenance
-  Requests (plain CRUD, saved to your account — the one must-have feature from
-  a competitive review that fit a 3-day budget), and Bank Feed (a stretch
-  feature — real PSD2-style open banking via Enable Banking's Mock ASPSP;
-  optional, session-only, needs its own setup, see `.env.example`).
-- **Monitoring:** see `langsmith/` for the dataset/experiment link or export.
+  `dashboard/dashboard_documentation.md`. That doc also has the full build spec (data
+  sources, joins, calculated fields) and a note on a chart bug that was found and fixed
+  post-presentation.
+- **POC:** import `n8n/workflow.json` into n8n (Workflows → Import from File), or read the
+  annotated walkthrough in `n8n/workflow_documentation.md`, which includes a standalone
+  `curl` command to trigger it without any other app.
+- **Monitoring:** `langsmith/README.md` documents what was monitored and links to the
+  LangSmith project; `run_monitoring_sample.py` is the script that produced those traces
+  (`pip install -r requirements.txt`, set `OPENAI_API_KEY`/`LANGSMITH_API_KEY` in `.env`,
+  then run it).
+- **Cost/timeline:** `cost_estimation/cost_analysis.md` and `timeline_estimate.md`.
 - **Presentation:** `presentation/Capstone Consulting Round 1.pptx` is the deck that was
-  actually presented and submitted — open it in PowerPoint/Google Slides. `slides.html`
-  (open directly in any browser, arrow keys or the left-edge tab rail to navigate) is the
-  earlier design draft it was adapted from; see `presentation/README.md` for exactly what
-  changed between the two.
-- **Decision:** see `feedback/round1_decision.md` for the keep/change call
-  after the teaching-staff presentation.
+  actually presented — open it in PowerPoint/Google Slides. `presentation/README.md`
+  documents what changed between it and the earlier working draft (numbers, added
+  claims, one bug found and fixed).
+- **Decision:** `feedback/round1_decision.md` — the keep/change call recorded after the
+  teaching-staff presentation, and what carries into Round 2.
 
 ## Status
 - [x] Sector + company size locked
 - [x] Research pack complete
-- [x] Dashboard built and published (Tableau Public — link in `dashboard/dashboard_documentation.md`; one known data bug flagged there)
+- [x] Dashboard built and published (Tableau Public — link in `dashboard/dashboard_documentation.md`)
 - [x] n8n POC built
 - [x] LangSmith sample captured (4/4 runs verified present via the LangSmith API — project `capstone-round1-property-extraction`, EU workspace)
 - [x] Cost/timeline estimated

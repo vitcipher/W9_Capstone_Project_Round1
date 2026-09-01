@@ -1,9 +1,3 @@
-pandas
 python-dotenv
-streamlit
 openai
-requests
 langsmith
-pyjwt
-cryptography
-supabase
