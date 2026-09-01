@@ -39,14 +39,14 @@ which figures are fully traceable vs. not yet cited):
 - Slide 8: a "what landlords currently pay (eg. Immoscout)" column (€0.99M–€20M) — no
   source, and the ImmoScout24 comparison isn't substantiated
 
-**A likely real bug, not just a documentation gap:** the published Tableau dashboard's
-"Private landlord households" chart (embedded as an image on the Appendix slide) shows
-values around 39.6M–49.8M. The student's own source spreadsheet puts private-landlord
-households at 5.0M–5.5M for the same years — close to Germany's *total dwelling stock*
-(~40–44M, see `germany_rental_ownership_trend.csv`), not landlord households. The wrong
-field is very likely wired into that chart in the Tableau workbook. Worth fixing before
-this dashboard link goes into any further graded submission, since it visibly contradicts
-slide 3 of the same deck.
+**A real bug, found and fixed:** the published Tableau dashboard's "Private landlord
+households" chart (embedded as an image on the Appendix slide, screenshotted before the
+fix) showed values around 39.6M–49.8M against the deck's own "~5M private-landlord
+households" claim on slide 3. Cause: the dual-axis "Foreign Population Migrating to
+Germany & Private Landlord Numbers are Increasing" chart had labels reading off the wrong
+axis — private-landlord households (5.0M–5.5M) needed its own left axis, separate from
+foreign population (39.6M–49.8M) on the right. Fixed post-presentation; see
+`dashboard/dashboard_documentation.md`.
 
 **One claim walked back from the draft, worth a second look:** the GDPR risk line changed
 from "flagged now rather than later" (draft — deliberately left open, since no DPIA has

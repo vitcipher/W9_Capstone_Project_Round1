@@ -16,15 +16,15 @@ layout) — it mostly held up, with one known issue flagged below.
 - **Local backup:** `dashboard/dashboard.twbx` (optional, in case the link becomes
   unreachable). Openable in Tableau Desktop or Tableau Public.
 
-## Known bug — fix before further grading
-The "Private landlord households" chart shows values around 39.6M–49.8M. The correct
-range, per `data/germany_private_landlord_households_2018_2022.csv`, is 5.0M–5.5M — the
-39.6M–49.8M range is close to Germany's *total dwelling stock* instead (see
-`germany_rental_ownership_trend.csv`), which strongly suggests the wrong field got wired
-into that chart in the workbook. This directly contradicts the "~5M private-landlord
-households" figure used on slide 3 of the presentation deck, so worth fixing before this
-link is shared again. See `presentation/README.md` for the full writeup of how this was
-found.
+## Known bug — fixed
+The "Private landlord households" chart originally showed values around 39.6M–49.8M
+instead of the correct 5.0M–5.5M (per
+`data/germany_private_landlord_households_2018_2022.csv`) — labels on the dual-axis
+"Foreign Population Migrating to Germany & Private Landlord Numbers are Increasing" chart
+were reading off the wrong axis. **Fixed post-presentation**: private-landlord households
+(5.0M–5.5M, 2018–2022) is now correctly plotted against its own left axis, foreign
+population (39.6M–49.8M, same years) against its own right axis. See `presentation/README.md`
+for the full writeup of how this was found.
 
 ## Data sources to connect
 
