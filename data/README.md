@@ -37,6 +37,13 @@ millions).
 
 ## `synthetic_landlord_portfolio.csv` (8 fictional properties — fully synthetic)
 
+**Status update:** now used only as one-time seed data — the "Load demo portfolio" button
+in `app/streamlit_app.py` inserts these 8 rows into a fresh Supabase account's `properties`
+table (see `supabase/schema.sql`) so a new signup isn't empty. The app's live data source
+is the `properties` table itself, not this file, once you've signed up and seeded/added
+properties. Still used directly for the Tableau dashboard spec, since that's a separate
+artifact from the Streamlit app.
+
 The landlord's actual portfolio, used for the P&L/dashboard use case. **Entirely made up**
 (fake street names using German placeholder-name conventions — Musterstraße/Beispielweg/
 Probeallee/Testring, meaning "Example Street" etc. — no real addresses or people), but
@@ -65,7 +72,13 @@ kind of thing a private landlord doing their own books tends to miss.
 
 ## `synthetic_maintenance_requests.csv` (8 rows — fully synthetic)
 
-Seed data for the app's Maintenance Requests tab (`app/streamlit_app.py`). 8 example
+**Status update:** written for the earlier session-state-only version of the app. Now that
+maintenance requests live in Supabase (`maintenance_requests` table), a new account starts
+empty — there's no "load demo maintenance requests" seed button yet (unlike properties,
+which does have one). Honest gap, not hidden: add one if the empty-state demo experience
+matters, using the same pattern as `load_demo_portfolio_csv()` in `app/streamlit_app.py`.
+
+Originally: seed data for the app's Maintenance Requests tab. 8 example
 requests spread across the 8 properties, a mix of urgency (Low/Medium/High) and status
 (New/In Progress/Resolved) so the tab isn't empty on first load. This is a plain CRUD
 feature with no AI involved — it's the one "must-have" feature (per a competitive review of

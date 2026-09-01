@@ -1,10 +1,18 @@
 """
-Round 1 POC frontend - two tabs.
+Property Ledger — frontend, now with real auth + persistence.
+
+Auth + persistence: landlords sign up / log in via Supabase Auth. Every
+table (properties, tenants, documents, maintenance_requests,
+monthly_transactions) has an owner_id scoped by Postgres Row Level
+Security (see supabase/schema.sql) - so one landlord's data is private
+from another at the database layer, not just filtered in this file.
+Setup: create a Supabase project, run supabase/schema.sql in its SQL
+Editor, set SUPABASE_URL/SUPABASE_ANON_KEY in .env. See app/db.py.
 
 Tab 1, Document Extraction (research/use_cases.md, use case 1): upload a
 document, AI drafts structured fields, human confirms before anything is
-saved. Human-in-the-loop by design: nothing is ever auto-saved. Two
-extraction backends are supported:
+saved to the documents table. Human-in-the-loop by design: nothing is
+ever auto-saved. Two extraction backends are supported:
   - "n8n webhook" (default) - calls the actual n8n/workflow.json POC, so this
     app is a real client of that workflow, not a separate reimplementation.
   - "Direct OpenAI API" - bypasses n8n, for quick local testing without
@@ -12,28 +20,31 @@ extraction backends are supported:
     workflow's OpenAI Responses API call; keep the two in sync if you edit
     either one.
 
-Tab 2, Maintenance Requests: plain CRUD, no AI involved - a landlord submits
-a request, statuses get updated inline. Seeded from
-data/synthetic_maintenance_requests.csv; edits live only in this session
-(same in-memory pattern as the extraction tab's confirmed records, not a
-real database). Scoped deliberately small - see the "buildable in 3 days"
-assessment that motivated this feature: it's the one must-have from the
-competitive feature landscape that needed zero new external integrations.
+Tab 2, Maintenance Requests: plain CRUD, no AI involved - now backed by
+the maintenance_requests table (was session_state-only in the earlier
+POC). It's the one must-have from the competitive feature landscape that
+needed zero new external integrations - see the "buildable in 3 days"
+assessment that motivated it.
 
 Tab 3, Bank Feed: the deliberate exception to "no new integrations" - a
 real PSD2-style open banking connection via Enable Banking's Mock ASPSP
 (fake test bank, no real bank account needed). See app/bank_feed.py for
-the auth flow and README/.env.example for setup. This is explicitly a
-stretch feature, not a Round 1 core deliverable.
+the auth flow and README/.env.example for setup. Explicitly a stretch
+feature, not a Round 1 core deliverable - stays session-only for now,
+not yet written to Supabase.
+
+Not yet migrated - a clear next step, not silently skipped: the
+monthly_transactions and tenants tables exist in supabase/schema.sql but
+have no UI here yet.
 """
 
 import base64
 import json
 import os
-from datetime import datetime
 from pathlib import Path
 
 import bank_feed
+import db
 import pandas as pd
 import requests
 import streamlit as st
@@ -46,8 +57,7 @@ except ImportError:
     pass
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-PORTFOLIO_PATH = DATA_DIR / "synthetic_landlord_portfolio.csv"
-MAINTENANCE_SEED_PATH = DATA_DIR / "synthetic_maintenance_requests.csv"
+DEMO_PORTFOLIO_PATH = DATA_DIR / "synthetic_landlord_portfolio.csv"
 
 MAINTENANCE_STATUSES = ["New", "In Progress", "Resolved"]
 MAINTENANCE_URGENCIES = ["Low", "Medium", "High"]
@@ -81,30 +91,50 @@ SYSTEM_PROMPT = (
     "rather than guessing."
 )
 
-st.set_page_config(page_title="Document Extraction Assistant", page_icon="🏠", layout="wide")
+st.set_page_config(page_title="Property Ledger", page_icon="🏠", layout="wide")
 
 
-@st.cache_data
-def load_portfolio() -> pd.DataFrame:
-    if PORTFOLIO_PATH.exists():
-        return pd.read_csv(PORTFOLIO_PATH)
+def _to_native(value):
+    """Pandas/numpy scalars (int64, float64, ...) aren't JSON-serializable
+    as-is, which breaks Supabase inserts silently-ish (a confusing
+    serialization error, not an obvious one) - convert to plain Python
+    types before sending, and NaN to None."""
+    if pd.isna(value):
+        return None
+    return value.item() if hasattr(value, "item") else value
+
+
+def load_demo_portfolio_csv() -> pd.DataFrame:
+    """The original synthetic 8-property seed - now used only to populate a
+    brand-new Supabase account on request, not as the app's live data source."""
+    if DEMO_PORTFOLIO_PATH.exists():
+        return pd.read_csv(DEMO_PORTFOLIO_PATH)
     return pd.DataFrame()
 
 
-def load_maintenance_seed() -> pd.DataFrame:
-    """Loaded once into session_state, not cached - the working copy is mutable
-    (new requests added, statuses updated) and lives only for this session, same
-    pattern as confirmed_records below."""
-    if MAINTENANCE_SEED_PATH.exists():
-        return pd.read_csv(MAINTENANCE_SEED_PATH)
-    return pd.DataFrame(columns=["request_id", "property_id", "description", "urgency", "status", "created_date"])
+def get_properties_df(client, owner_id: str) -> pd.DataFrame:
+    rows = db.list_properties(client, owner_id)
+    return pd.DataFrame(rows) if rows else pd.DataFrame()
 
 
-def next_request_id(df: pd.DataFrame) -> str:
-    if df.empty:
-        return "MR001"
-    nums = df["request_id"].str.extract(r"MR(\d+)").astype(int)[0]
-    return f"MR{nums.max() + 1:03d}"
+def get_maintenance_df(client, owner_id: str) -> pd.DataFrame:
+    rows = db.list_maintenance_requests(client, owner_id)
+    return pd.DataFrame(rows) if rows else pd.DataFrame(
+        columns=["id", "property_id", "description", "urgency", "status", "created_date"]
+    )
+
+
+def get_documents_df(client, owner_id: str) -> pd.DataFrame:
+    rows = db.list_documents(client, owner_id)
+    return pd.DataFrame(rows) if rows else pd.DataFrame()
+
+
+def property_selector(properties_df: pd.DataFrame, key: str, label: str = "Property"):
+    """Returns the selected property's UUID id, or None if there are no properties."""
+    if properties_df.empty:
+        return None
+    options = {row["id"]: f"{row['nickname']} ({row['city']})" for _, row in properties_df.iterrows()}
+    return st.selectbox(label, list(options.keys()), format_func=lambda pid: options[pid], key=key)
 
 
 def call_n8n_webhook(url: str, payload: dict) -> dict:
@@ -159,24 +189,105 @@ def call_openai_directly(payload: dict) -> dict:
     }
 
 
-st.title("🏠 Property Ledger — Round 1 POC")
+# ==================================================================
+# Auth gate - nothing below this renders until Supabase is configured
+# and the visitor is logged in.
+# ==================================================================
+
+if not db.is_configured():
+    st.title("🏠 Property Ledger")
+    st.error(
+        "**Supabase not configured.** Create a project at "
+        "[supabase.com](https://supabase.com), run `supabase/schema.sql` in its SQL "
+        "Editor, then set `SUPABASE_URL` and `SUPABASE_ANON_KEY` in `.env`."
+    )
+    st.stop()
+
+if "sb_client" not in st.session_state:
+    st.session_state.sb_client = db.new_client()
+if "sb_user" not in st.session_state:
+    st.session_state.sb_user = None
+
+sb = st.session_state.sb_client
+
+if st.session_state.sb_user is None:
+    st.title("🏠 Property Ledger")
+    st.caption(
+        "Sign in to continue. Your properties, documents, and maintenance requests are "
+        "private to your account — enforced at the database level via Postgres Row "
+        "Level Security, not just filtered in this app."
+    )
+    mode = st.radio("Mode", ["Log in", "Sign up"], horizontal=True, label_visibility="collapsed")
+    with st.form("auth_form"):
+        email = st.text_input("Email")
+        password = st.text_input("Password", type="password")
+        submitted = st.form_submit_button(mode)
+        if submitted:
+            if not email or not password:
+                st.error("Enter both email and password.")
+            else:
+                try:
+                    if mode == "Sign up":
+                        resp = db.sign_up(sb, email, password)
+                        if resp.session is None:
+                            st.info(
+                                "Account created. If your Supabase project requires email "
+                                'confirmation, check your inbox, then switch to "Log in".'
+                            )
+                        else:
+                            st.session_state.sb_user = resp.user
+                            st.rerun()
+                    else:
+                        resp = db.sign_in(sb, email, password)
+                        st.session_state.sb_user = resp.user
+                        st.rerun()
+                except Exception as exc:  # noqa: BLE001
+                    st.error(f"{mode} failed: {exc}")
+    st.stop()
+
+owner_id = st.session_state.sb_user.id
+
+with st.sidebar:
+    st.caption(f"Logged in as **{st.session_state.sb_user.email}**")
+    if st.button("Log out"):
+        db.sign_out(sb)
+        st.session_state.sb_user = None
+        st.session_state.pop("sb_client", None)
+        st.rerun()
+    st.divider()
+
+# ==================================================================
+# Main app (logged in)
+# ==================================================================
+
+st.title("🏠 Property Ledger")
 st.caption(
-    "Two features in this demo: document extraction (upload → AI draft → human "
-    "confirmation) and maintenance request tracking. Nothing in either tab auto-saves "
-    "beyond this browser session."
+    "Document extraction (upload → AI draft → human confirmation) and maintenance "
+    "request tracking are saved to your account. The bank-feed connection stays "
+    "session-only."
 )
 
-portfolio = load_portfolio()
+portfolio = get_properties_df(sb, owner_id)
 
-if "maintenance_requests" not in st.session_state:
-    st.session_state.maintenance_requests = load_maintenance_seed()
+if portfolio.empty:
+    st.info("No properties yet.")
+    if st.button("Load demo portfolio (8 example properties)"):
+        demo_df = load_demo_portfolio_csv()
+        if demo_df.empty:
+            st.error("Demo seed file not found at data/synthetic_landlord_portfolio.csv.")
+        else:
+            with st.spinner("Creating demo properties..."):
+                for _, row in demo_df.drop(columns=["property_id"], errors="ignore").iterrows():
+                    fields = {k: _to_native(v) for k, v in row.items()}
+                    db.create_property(sb, owner_id, **fields)
+            st.rerun()
 
 tab_extract, tab_maintenance, tab_bank = st.tabs(
     ["📄 Document Extraction", "🔧 Maintenance Requests", "🏦 Bank Feed"]
 )
 
 with st.sidebar:
-    st.header("Settings")
+    st.header("Extraction settings")
     backend = st.radio(
         "Extraction backend",
         ["n8n webhook", "Direct OpenAI API (no n8n needed)"],
@@ -197,36 +308,31 @@ with st.sidebar:
     )
 
 with tab_extract:
-    if "confirmed_records" not in st.session_state:
-        st.session_state.confirmed_records = []
     if "last_result" not in st.session_state:
         st.session_state.last_result = None
 
     col1, col2 = st.columns(2)
     with col1:
-        if not portfolio.empty:
-            property_label = st.selectbox(
-                "Property",
-                portfolio.apply(lambda r: f"{r['property_id']} — {r['nickname']} ({r['city']})", axis=1),
-            )
-            property_id = property_label.split(" — ")[0]
-        else:
-            property_id = st.text_input("Property ID", value="P01")
+        selected_property_id = property_selector(portfolio, key="extract_property")
     with col2:
         doc_type_label = st.selectbox("Document type", list(DOCUMENT_TYPES.keys()))
         document_type_hint = DOCUMENT_TYPES[doc_type_label]
 
-    uploaded_file = st.file_uploader("Upload document", type=["pdf", "png", "jpg", "jpeg"])
+    uploaded_file = st.file_uploader(
+        "Upload document", type=["pdf", "png", "jpg", "jpeg"], disabled=portfolio.empty
+    )
     if uploaded_file is not None:
         st.caption(f"{uploaded_file.name} — {uploaded_file.size / 1024:.1f} KB")
 
-    if st.button("Extract with AI", type="primary", disabled=uploaded_file is None):
+    if st.button(
+        "Extract with AI", type="primary", disabled=uploaded_file is None or selected_property_id is None
+    ):
         file_bytes = uploaded_file.read()
         mime_type = uploaded_file.type or (
             "application/pdf" if uploaded_file.name.lower().endswith(".pdf") else "image/png"
         )
         payload = {
-            "property_id": property_id,
+            "property_id": selected_property_id,
             "document_type_hint": document_type_hint,
             "mime_type": mime_type,
             "file_base64": base64.b64encode(file_bytes).decode("utf-8"),
@@ -262,117 +368,126 @@ with tab_extract:
             else:
                 edited_fields[key] = st.text_input(key, value=str(value))
 
-        if st.button("✅ Confirm & Save (this session only)"):
-            st.session_state.confirmed_records.append(
-                {
-                    "property_id": result.get("property_id", property_id),
-                    "document_type": document_type_hint,
-                    "confirmed_at": datetime.now().isoformat(timespec="seconds"),
-                    **edited_fields,
-                }
+        if st.button("✅ Confirm & Save"):
+            db.create_document(
+                sb,
+                owner_id,
+                property_id=result.get("property_id", selected_property_id),
+                document_type=document_type_hint,
+                extracted_fields=edited_fields,
+                confidence=confidence,
+                needs_human_review=result.get("needs_human_review", False),
             )
             st.session_state.last_result = None
+            st.success("Saved to your account.")
             st.rerun()
 
-    if st.session_state.confirmed_records:
-        st.subheader("Confirmed records (this session)")
-        st.caption(
-            "In-memory demo table only. In the real MVP this would write to the landlord's "
-            "portfolio database, feeding the P&L dashboard."
-        )
-        st.dataframe(pd.DataFrame(st.session_state.confirmed_records))
+    documents_df = get_documents_df(sb, owner_id)
+    if not documents_df.empty:
+        st.subheader("Confirmed documents")
+        st.caption("Saved to your account (documents table) — persists across sessions.")
+        st.dataframe(documents_df, use_container_width=True)
 
 with tab_maintenance:
     st.caption(
-        "Plain CRUD, no AI involved — seeded from data/synthetic_maintenance_requests.csv, "
-        "edits live only in this browser session (same in-memory pattern as the extraction "
-        "tab's confirmed records, not a database)."
+        "Plain CRUD, no AI involved — saved to your account (maintenance_requests "
+        "table), persists across sessions."
     )
 
-    mreq = st.session_state.maintenance_requests
+    if portfolio.empty:
+        st.info("Add properties first (above) before creating maintenance requests.")
+    else:
+        mreq = get_maintenance_df(sb, owner_id)
 
-    status_counts = mreq["status"].value_counts()
-    metric_cols = st.columns(len(MAINTENANCE_STATUSES))
-    for col, status in zip(metric_cols, MAINTENANCE_STATUSES):
-        col.metric(status, int(status_counts.get(status, 0)))
+        status_counts = mreq["status"].value_counts() if not mreq.empty else pd.Series(dtype=int)
+        metric_cols = st.columns(len(MAINTENANCE_STATUSES))
+        for col, status in zip(metric_cols, MAINTENANCE_STATUSES):
+            col.metric(status, int(status_counts.get(status, 0)))
 
-    st.divider()
+        st.divider()
 
-    filter_col1, filter_col2 = st.columns(2)
-    with filter_col1:
-        property_filter = st.multiselect(
-            "Filter by property", sorted(mreq["property_id"].unique()), default=[]
-        )
-    with filter_col2:
-        status_filter = st.multiselect("Filter by status", MAINTENANCE_STATUSES, default=[])
+        if not mreq.empty:
+            id_to_label = {row["id"]: row["nickname"] for _, row in portfolio.iterrows()}
+            mreq = mreq.copy()
+            mreq["property"] = mreq["property_id"].map(id_to_label)
 
-    filtered = mreq.copy()
-    if property_filter:
-        filtered = filtered[filtered["property_id"].isin(property_filter)]
-    if status_filter:
-        filtered = filtered[filtered["status"].isin(status_filter)]
-
-    st.caption("Update status directly in the table below — changes apply immediately.")
-    edited = st.data_editor(
-        filtered,
-        column_config={
-            "request_id": st.column_config.TextColumn("ID", disabled=True),
-            "property_id": st.column_config.TextColumn("Property", disabled=True),
-            "description": st.column_config.TextColumn("Description", disabled=True, width="large"),
-            "urgency": st.column_config.SelectboxColumn("Urgency", options=MAINTENANCE_URGENCIES),
-            "status": st.column_config.SelectboxColumn("Status", options=MAINTENANCE_STATUSES),
-            "created_date": st.column_config.TextColumn("Created", disabled=True),
-        },
-        hide_index=True,
-        use_container_width=True,
-        key="maintenance_editor",
-    )
-    # Write edits (urgency/status changes) back into the full (unfiltered) session table
-    if not edited.equals(filtered):
-        st.session_state.maintenance_requests.update(edited)
-        st.rerun()
-
-    st.divider()
-    st.subheader("Submit a new request")
-    with st.form("new_maintenance_request", clear_on_submit=True):
-        req_col1, req_col2 = st.columns(2)
-        with req_col1:
-            if not portfolio.empty:
-                new_property_label = st.selectbox(
-                    "Property",
-                    portfolio.apply(lambda r: f"{r['property_id']} — {r['nickname']} ({r['city']})", axis=1),
-                    key="new_request_property",
+            filter_col1, filter_col2 = st.columns(2)
+            with filter_col1:
+                property_filter = st.multiselect(
+                    "Filter by property", sorted(mreq["property"].dropna().unique()), default=[]
                 )
-                new_property_id = new_property_label.split(" — ")[0]
-            else:
-                new_property_id = st.text_input("Property ID", value="P01", key="new_request_property_id")
-        with req_col2:
-            new_urgency = st.selectbox("Urgency", MAINTENANCE_URGENCIES, index=1)
-        new_description = st.text_area("What's the issue?")
-        submitted = st.form_submit_button("Submit request")
-        if submitted:
-            if not new_description.strip():
-                st.error("Please describe the issue before submitting.")
-            else:
-                new_row = pd.DataFrame([{
-                    "request_id": next_request_id(st.session_state.maintenance_requests),
-                    "property_id": new_property_id,
-                    "description": new_description.strip(),
-                    "urgency": new_urgency,
-                    "status": "New",
-                    "created_date": datetime.now().strftime("%Y-%m-%d"),
-                }])
-                st.session_state.maintenance_requests = pd.concat(
-                    [st.session_state.maintenance_requests, new_row], ignore_index=True
-                )
-                st.success("Request submitted.")
+            with filter_col2:
+                status_filter = st.multiselect("Filter by status", MAINTENANCE_STATUSES, default=[])
+
+            filtered = mreq.copy()
+            if property_filter:
+                filtered = filtered[filtered["property"].isin(property_filter)]
+            if status_filter:
+                filtered = filtered[filtered["status"].isin(status_filter)]
+
+            st.caption("Update status directly in the table below — changes save immediately.")
+            display_cols = ["property", "description", "urgency", "status", "created_date"]
+            indexed = filtered.set_index("id")[display_cols]
+            edited = st.data_editor(
+                indexed,
+                column_config={
+                    "property": st.column_config.TextColumn("Property", disabled=True),
+                    "description": st.column_config.TextColumn("Description", disabled=True, width="large"),
+                    "urgency": st.column_config.SelectboxColumn("Urgency", options=MAINTENANCE_URGENCIES),
+                    "status": st.column_config.SelectboxColumn("Status", options=MAINTENANCE_STATUSES),
+                    "created_date": st.column_config.TextColumn("Created", disabled=True),
+                },
+                hide_index=True,
+                use_container_width=True,
+                key="maintenance_editor",
+            )
+            changed_ids = [
+                req_id
+                for req_id in indexed.index
+                if edited.loc[req_id, "urgency"] != indexed.loc[req_id, "urgency"]
+                or edited.loc[req_id, "status"] != indexed.loc[req_id, "status"]
+            ]
+            if changed_ids:
+                for req_id in changed_ids:
+                    db.update_maintenance_request(
+                        sb,
+                        req_id,
+                        urgency=edited.loc[req_id, "urgency"],
+                        status=edited.loc[req_id, "status"],
+                    )
                 st.rerun()
+
+        st.divider()
+        st.subheader("Submit a new request")
+        with st.form("new_maintenance_request", clear_on_submit=True):
+            req_col1, req_col2 = st.columns(2)
+            with req_col1:
+                new_property_id = property_selector(portfolio, key="new_request_property")
+            with req_col2:
+                new_urgency = st.selectbox("Urgency", MAINTENANCE_URGENCIES, index=1)
+            new_description = st.text_area("What's the issue?")
+            submitted = st.form_submit_button("Submit request")
+            if submitted:
+                if not new_description.strip():
+                    st.error("Please describe the issue before submitting.")
+                else:
+                    db.create_maintenance_request(
+                        sb,
+                        owner_id,
+                        property_id=new_property_id,
+                        description=new_description.strip(),
+                        urgency=new_urgency,
+                        status="New",
+                    )
+                    st.success("Request submitted.")
+                    st.rerun()
 
 with tab_bank:
     st.caption(
         "Real PSD2-style open banking via Enable Banking's Mock ASPSP (fake test bank, no "
         "real bank account needed). A deliberate stretch feature beyond Round 1's core "
-        "scope — see app/bank_feed.py for the auth flow, README/.env.example for setup."
+        "scope — see app/bank_feed.py for the auth flow, README/.env.example for setup. "
+        "Session-only for now, not yet written to Supabase."
     )
 
     REDIRECT_URL = os.environ.get("ENABLE_BANKING_REDIRECT_URL", "http://localhost:8501")

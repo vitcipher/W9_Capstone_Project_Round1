@@ -6,3 +6,4 @@ requests
 langsmith
 pyjwt
 cryptography
+supabase
