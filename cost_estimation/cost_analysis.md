@@ -73,6 +73,25 @@ plausible pilot size** — the fixed SaaS/tooling costs (~€70–90/month) domi
 until landlord count reaches the thousands, at which point it's a "good problem" that
 means the pilot succeeded.
 
+## Note on the presented deck's monetization appendix
+
+`presentation/Capstone Consulting Round 1.pptx` adds a revenue-side scenario not in this
+file: a **75,000-landlord / 50%-capture-rate** scenario with a stated **+97% margin**, and
+a comparison column for "what landlords currently pay elsewhere (e.g. ImmoScout24)" in the
+€0.99M–€20M range. Both are illustrative additions for the pitch narrative, not derived
+from a cited source the way the unit-economics above are:
+- The 75,000-landlord figure and 50% capture rate are assumptions about Chleo's platform
+  (which is itself fictional for this exercise) — treat them the same way as the
+  200/2,000-landlord scenarios above: recompute-able placeholders, not researched numbers.
+- The "what landlords currently pay" / ImmoScout24 comparison has no source behind it in
+  this repo — don't cite it as a researched competitive figure without finding one first.
+  See `presentation/README.md` for the full list of unsourced claims from the deck.
+
+If this monetization scenario needs to go into a future graded deliverable as more than a
+pitch illustration, it should get the same unit-cost-first treatment as the section above:
+a real price-per-seat or take-rate assumption, clearly labeled, rather than a single
+margin percentage.
+
 ## Assumptions table
 
 | Assumption | Rationale |

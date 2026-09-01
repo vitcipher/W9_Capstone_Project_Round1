@@ -35,7 +35,9 @@ capstone-round1/
 ├── supabase/
 │   └── schema.sql               # run once in the Supabase SQL Editor
 ├── presentation/
-│   └── slides.html              # Round 1 pitch deck, open directly in a browser
+│   ├── Capstone Consulting Round 1.pptx   # SUBMITTED deck — what was actually presented
+│   ├── README.md                # what changed between the draft below and the presented deck
+│   └── slides.html              # design draft/generator, not the submitted version
 ├── langsmith/
 ├── cost_estimation/
 │   ├── cost_analysis.md
@@ -56,10 +58,11 @@ cp .env.example .env   # fill in any API keys, do not commit .env
 ```
 
 ## How to view the deliverables
-- **Dashboard:** published on Tableau Cloud — link in
+- **Dashboard:** published on Tableau Public — link in
   `dashboard/dashboard_documentation.md` (a `.twbx` backup may also be in
   `dashboard/`, openable in Tableau Desktop/Public if the link isn't
-  reachable).
+  reachable). Note: that doc also flags a known data bug in the published
+  chart worth fixing before further grading.
 - **POC:** import `n8n/workflow.json` into n8n, or see the annotated
   screenshots in `n8n/workflow_documentation.md`. Run `streamlit run
   app/streamlit_app.py` for an interactive demo frontend — needs a Supabase
@@ -74,19 +77,21 @@ cp .env.example .env   # fill in any API keys, do not commit .env
   feature — real PSD2-style open banking via Enable Banking's Mock ASPSP;
   optional, session-only, needs its own setup, see `.env.example`).
 - **Monitoring:** see `langsmith/` for the dataset/experiment link or export.
-- **Presentation:** open `presentation/slides.html` directly in any browser — arrow
-  keys or the left-edge tab rail navigate between slides. No build step, no dependency
-  on this being viewed inside Claude.
+- **Presentation:** `presentation/Capstone Consulting Round 1.pptx` is the deck that was
+  actually presented and submitted — open it in PowerPoint/Google Slides. `slides.html`
+  (open directly in any browser, arrow keys or the left-edge tab rail to navigate) is the
+  earlier design draft it was adapted from; see `presentation/README.md` for exactly what
+  changed between the two.
 - **Decision:** see `feedback/round1_decision.md` for the keep/change call
   after the teaching-staff presentation.
 
 ## Status
 - [x] Sector + company size locked
 - [x] Research pack complete
-- [ ] Dashboard built (spec complete in `dashboard/dashboard_documentation.md`, not yet built in Tableau)
+- [x] Dashboard built and published (Tableau Public — link in `dashboard/dashboard_documentation.md`; one known data bug flagged there)
 - [x] n8n POC built
 - [x] LangSmith sample captured (4/4 runs verified present via the LangSmith API — project `capstone-round1-property-extraction`, EU workspace)
 - [x] Cost/timeline estimated
-- [x] Presentation deck built (`presentation/slides.html`)
-- [ ] Presented to teaching staff
-- [ ] `round1_decision.md` written
+- [x] Presentation deck built and presented (`presentation/Capstone Consulting Round 1.pptx`)
+- [x] Presented to teaching staff
+- [x] `round1_decision.md` written

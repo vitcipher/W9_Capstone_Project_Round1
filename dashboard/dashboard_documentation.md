@@ -1,19 +1,30 @@
 # Dashboard Documentation
 
 ## Tool
-Tableau Cloud (agreed alternative to PowerBI).
+Tableau Public (built and published here — not Tableau Cloud as originally spec'd below;
+Tableau Public was used instead since it's free/no-license and the goal was a shareable
+public link, which is what Tableau Public is for).
 
 ## Status
-**Spec complete, not yet built.** Tableau Desktop/Cloud is a GUI tool that can't be
-driven or verified from here — everything below is an exact, unambiguous build spec (data
-sources, joins/blends, calculated-field formulas, chart types, layout) so building it is a
-follow-the-recipe exercise rather than a design exercise. Once built:
+**Built and published.** The build spec below was written before building, as an exact,
+unambiguous recipe (data sources, joins/blends, calculated-field formulas, chart types,
+layout) — it mostly held up, with one known issue flagged below.
 
 ## Where to view it
-- **Published link (Tableau Cloud):** TODO — set sharing to "anyone with the link can
-  view", since graders won't have a login on your Tableau site.
+- **Published link (Tableau Public):**
+  https://public.tableau.com/views/Capstone_Dashboard_Vittal/Dashboard1?:language=en-GB&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link
 - **Local backup:** `dashboard/dashboard.twbx` (optional, in case the link becomes
   unreachable). Openable in Tableau Desktop or Tableau Public.
+
+## Known bug — fix before further grading
+The "Private landlord households" chart shows values around 39.6M–49.8M. The correct
+range, per `data/germany_private_landlord_households_2018_2022.csv`, is 5.0M–5.5M — the
+39.6M–49.8M range is close to Germany's *total dwelling stock* instead (see
+`germany_rental_ownership_trend.csv`), which strongly suggests the wrong field got wired
+into that chart in the workbook. This directly contradicts the "~5M private-landlord
+households" figure used on slide 3 of the presentation deck, so worth fixing before this
+link is shared again. See `presentation/README.md` for the full writeup of how this was
+found.
 
 ## Data sources to connect
 
@@ -113,4 +124,5 @@ Two tabs/pages:
 9. Take screenshots of both tabs for this doc once built.
 
 ## Screenshots
-Add exported PNGs here once built — one per tab (Portfolio Overview, Market Context).
+A screenshot of the published dashboard is embedded in `presentation/Capstone Consulting
+Round 1.pptx` (Appendix slide) — no separate PNG export in this folder yet.

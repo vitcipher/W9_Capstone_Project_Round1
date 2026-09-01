@@ -1,5 +1,32 @@
 # Data sources
 
+## `germany_private_landlord_households_2018_2022.csv`, `germany_dwellings_completed.csv`, `germany_dwellings_completed_by_building_type.csv`
+
+Added post-presentation, sourced from a Google Sheet the student compiled during Round 1
+prep: [spreadsheet](https://docs.google.com/spreadsheets/d/1r7stS82qkcaJ82YGMHm3j8kGZq_OTdmz9sL7YQrv2pY/edit).
+Used for the "Foreign Population Migrating to German & Private Landlord Numbers are
+Increasing" and "Number of new buildings completed" charts on the published Tableau
+dashboard (see `dashboard/dashboard_documentation.md`).
+
+**Honesty note:** the foreign-population figures in that sheet are byte-for-byte identical
+to `germany_foreign_population_by_citizenship.csv` (Destatis AZR, already cited elsewhere
+in this repo) — that part is fully traceable. The **private-landlord-households
+(2018–2022)** and **dwellings-completed** series, however, have no source stated in the
+sheet itself. The landlord figures (5.00M in 2018 → 5.50M in 2022) are directionally
+consistent with `germany_private_landlord_households_trend.csv`'s cited 2022 anchor
+(IW Köln/SOEP, "5.5M+" in 2022) — close enough to plausibly be drawn from the same
+underlying report, but not confirmed. The dwellings-completed series is very plausibly
+Destatis Baufertigstellungen (building completions) data, given the shape (2008–2010
+financial-crisis dip, since recovery) matches known patterns, but isn't linked to a
+specific table here. **If this goes into a graded deliverable, get the actual citation
+before final submission** — right now it's usable for the pitch narrative but doesn't
+meet the same sourcing bar as the rest of this repo's data.
+
+**Known bug worth fixing:** the published Tableau dashboard's "Private landlord households"
+chart shows values in the 39.6M–49.8M range — that's roughly Germany's *total dwelling
+stock* (see `germany_rental_ownership_trend.csv`), not private-landlord households, which
+this very file puts at 5.0M–5.5M. The chart has the wrong field wired to it.
+
 ## `germany_rental_listings_clean.csv` (full, 268,643 rows, 45.8 MB — local only, gitignored)
 ## `germany_rental_listings_sample_5k.csv` (5,000-row random sample — committed, for quick loads/demos)
 

@@ -40,6 +40,16 @@
   foreign population grew 28.9% from 2018 to 2025 (Destatis AZR), with populations that
   skew heavily toward renting (Ukraine +897%, India +151% over the same period).
 
+  **Note on the numbers used in the presented deck:** `presentation/Capstone Consulting
+  Round 1.pptx` rounds/restates a few of these — 3M→5M+ private-landlord households
+  (rounded from 3.7M→5.5M+ above), "6% of the Total population" (computed as
+  private-landlord households ÷ total population from the student's own compiled data —
+  see `data/germany_private_landlord_households_2018_2022.csv` — a different metric from
+  IW Köln's own 10%→13% population-share figure above, not an error, just a different
+  denominator/methodology), and 53% renter-household share (vs. 58%, Zensus 2022, above —
+  source for 53% not confirmed). The figures in this bullet are the ones with a traceable
+  citation; see `presentation/README.md` for the full reconciliation.
+
 - **How AI is currently used in this sector:** Real estate AI hiring grew +93.5%
   year-over-year in 2025 — the second-fastest of any sector tracked in the AI Index 2026,
   though it's still starting from a low absolute base (2.08% of postings vs. 13.2% for the

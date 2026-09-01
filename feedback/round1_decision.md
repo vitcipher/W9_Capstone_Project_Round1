@@ -1,28 +1,44 @@
 # Round 1 Decision
 
-**Not yet fillable — this file needs the real presentation to happen first.** Everything
-below except the last section is intentionally left blank rather than invented; slide 12
-of `presentation/slides.html` says the same thing to the room. Fill in after presenting to
-the teaching staff.
+Recorded after presenting `presentation/Capstone Consulting Round 1.pptx` to the teaching
+staff (the presented deck — adapted from the `slides.html`/`slides.pptx` draft in this
+repo, with updated statistics and a monetization/unit-economics appendix; see
+`presentation/README.md` for what changed between draft and presented versions).
 
-## Feedback summary (3–5 bullets)
-- (what landed)
-- (what confused people)
-- (what felt risky)
-- (whether the industry/use case should change)
+## Feedback summary
+- Overall verdict: **keep** — the sector, use case, and company-size framing landed as
+  presented, no pivot requested.
+- Specific technical direction given: use **Supabase (Postgres)** for real
+  persistence/auth rather than continuing with the session-state/CSV-only POC.
+- Scope guidance: **de-prioritize direct bank-account connections** — confirmed as a
+  "nice to have," not something to invest further build time in right now. This matches
+  where it already sat in the MoSCoW backlog (slide 10/15 of the draft deck) — the
+  feedback validated that prioritization rather than changing it.
 
-## Decision: KEEP | CHANGE
+## Decision: KEEP
 
-## If CHANGE
-What changed (industry / sector / size / use case / approach) and why:
+Industry (real estate / PropTech for private landlords), use case (rent/expense/lease
+document extraction → portfolio dashboard), and company size (Medium) all carry forward
+into Round 2 unchanged.
 
 ## What I'll deepen in Round 2
-*(Pre-filled from the research pack — adjust if the decision above is CHANGE rather than KEEP.)*
-- **Use case:** the rent/expense/lease document extraction assistant (`research/use_cases.md`,
-  use case 1) becomes a working MVP — document upload → AI draft → human confirmation →
-  live portfolio dashboard, running end to end rather than a POC.
-- **First idea for MVP scope:** harden the existing n8n workflow + Streamlit demo (auth,
-  persistence, retry handling — see `n8n/workflow_documentation.md` "Limits vs.
-  production") and run the pilot outlined in `cost_estimation/timeline_estimate.md`; use
-  case 3 (market valuation, `research/use_cases.md`) stays a documented Round 2/pilot-phase
-  stretch goal rather than being pulled into the MVP.
+- **Use Supabase for real persistence + auth** — acted on already, not just planned: see
+  `supabase/schema.sql` and `app/db.py`. Properties, confirmed document extractions, and
+  maintenance requests are now real Postgres rows behind Row Level Security
+  (`owner_id = auth.uid()`), not session-state/CSV. Landlords sign up/log in with a real
+  email + password; one landlord's tenants/documents/properties are private from another's
+  at the database layer, not just filtered in app code.
+- **Reduce bank-connection scope accordingly** — the Enable Banking Mock ASPSP integration
+  (`app/bank_feed.py`) stays as a working, de-risked demo (proof the technical path is
+  viable) but is deliberately *not* being built out further or wired into Supabase yet,
+  per the feedback above.
+- **Use case:** the rent/expense/lease document extraction assistant
+  (`research/use_cases.md`, use case 1) continues toward a working MVP — document upload →
+  AI draft → human confirmation → live portfolio dashboard, now backed by real data
+  instead of a POC.
+- **Next MVP scope:** finish hardening what's already built (auth edge cases, retry
+  handling on the extraction call — see `n8n/workflow_documentation.md` "Limits vs.
+  production"), add a maintenance-requests demo-seed path (properties has one, maintenance
+  doesn't yet), and wire the Tableau dashboard to live Supabase data instead of the static
+  synthetic CSVs it currently reads. Use case 3 (market valuation, `research/use_cases.md`)
+  stays a documented stretch goal, not pulled into the MVP.
