@@ -216,7 +216,7 @@ def add_table(slide, left, top, width, height, header, rows, col_widths):
     return tbl_shape
 
 
-TOTAL = 14
+TOTAL = 15
 prs = new_deck()
 
 # ---------------------------------------------------------------- Slide 1
@@ -508,6 +508,42 @@ textbox(s, MARGIN, Inches(5.55), Inches(11.5), Inches(1.0), [
 ])
 source_line(s, "SOURCE: cost_estimation/cost_analysis.md — unit costs cited to public pricing; breakeven/margin computed here, not previously published", top=Inches(6.7))
 footer(s, 14, TOTAL)
+
+# ---------------------------------------------------------------- Slide 15
+s = add_slide(prs)
+eyebrow(s, "15", "PROJECT PLAN")
+title(s, "What ships when — priority follows the customer, not the demo.", size=28)
+textbox(s, MARGIN, Inches(1.85), Inches(11.5), Inches(0.9), [
+    {"text": ("Scoped as a MoSCoW backlog. The order isn't about what's technically "
+              "impressive — it's about what the landlord from slide 04 (small portfolio, "
+              "side income, low tech-sophistication) actually needs first."),
+     "size": 14.5, "color": INK}
+])
+add_table(
+    s, MARGIN, Inches(3.0), Inches(11.5), Inches(3.0),
+    ["Priority", "Feature", "Status"],
+    [
+        ["Must have", "Manage the costs & profits",
+         "Built - Round 1 core (extraction + dashboard); Round 2 hardens to production"],
+        ["Should have", "Tax savings advisor bot", "New - Round 2/3 candidate"],
+        ["Could have", "Automated rental contract generation",
+         "Adjacent to lease-extraction already built - inverse direction"],
+        ["Could have", "Tenant complaints management",
+         "Adjacent to maintenance-request tracking already prototyped"],
+        ["Nice to have", "Direct bank connections (rent verification, tenant reminders, "
+         "auto statement pull)", "Already demoed end to end (Enable Banking Mock ASPSP) - "
+         "lowest priority, most de-risked"],
+    ],
+    [Inches(1.6), Inches(3.4), Inches(6.5)],
+)
+textbox(s, MARGIN, Inches(6.15), Inches(11.5), Inches(1.0), [
+    {"text": ("That last row is deliberate: technical readiness and customer priority "
+              "aren't the same axis. Bank connections are the furthest along technically "
+              "and the lowest priority for this customer - proof the roadmap follows the "
+              "persona (slide 04), not the excitement of what got built."),
+     "size": 13, "color": INK, "italic": True}
+])
+footer(s, 15, TOTAL)
 
 out_path = "slides.pptx"
 prs.save(out_path)
