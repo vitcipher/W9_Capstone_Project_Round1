@@ -55,6 +55,19 @@
   the brief: "one capability you can finish rather than a product you can only
   describe").
 
+## Round 2 backlog (MoSCoW, as presented)
+
+Presented on the "Additional features (scoping for Round 2)" slide of
+`presentation/Capstone Consulting Round 1.pptx`:
+
+| Feature | Priority | Relation to the use cases above |
+|---|---|---|
+| Manage the costs and profits | **Must have** | This *is* use case 2 (Portfolio P&L Dashboard) — already the Round 1 dashboard focus, carrying straight into Round 2 as the MVP core |
+| Tax Savings Advisor Bot | Should have | New scope, not covered by use cases 1–3 — would need its own problem/data/effort writeup before Round 2 build |
+| Direct Bank Connections (automatic statement pull, rent-received checks, tenant reminders) | Nice to have | Already de-prioritized per `feedback/round1_decision.md` — the Enable Banking Mock ASPSP integration in the working prototype built alongside this pitch is a de-risking proof of concept, not something being built out further right now |
+| Tenants complaints management | Could have | Related to, but not identical to, the maintenance-requests tracking already built in that prototype (landlord-logged issues vs. tenant-submitted complaints) — worth clarifying which one this becomes before Round 2 |
+| Automated Rental Contract Generation | Could have | New scope, not covered by use cases 1–3 — generation is a materially different (and higher-liability) capability than the extraction/reading use cases above, since it means the AI drafts a legal document rather than reading one |
+
 ## Which use case becomes the POC / dashboard focus?
 
 - **n8n POC → Use case 1** (document extraction assistant, with the human-review step
